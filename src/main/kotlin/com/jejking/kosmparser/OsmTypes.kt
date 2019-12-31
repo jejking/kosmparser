@@ -1,5 +1,6 @@
 package com.jejking.kosmparser
 
+import kotlinx.coroutines.flow.Flow
 import java.time.ZonedDateTime
 
 const val MIN_LAT = -90.0
@@ -32,9 +33,7 @@ data class Point(val lat: Double, val lon: Double) {
  */
 data class Bounds(val minPoint: Point, val maxPoint: Point)
 
-enum class MemberType {
-    NODE, WAY, RELATION
-}
+
 
 /**
  * Represents [attributes that are common](https://wiki.openstreetmap.org/wiki/Elements#Common_attributes)
@@ -113,8 +112,63 @@ data class Way(override val elementMetadata: ElementMetadata,
     fun isClosed(): Boolean = !isFaulty() && nds.first() == nds.last()
 }
 
-data class Member(val type: MemberType, val ref: Long, val role: String?)
+/**
+ * Describes type of a [Member] in a [Relation].
+ */
+enum class MemberType {
+    NODE, WAY, RELATION
+}
 
+/**
+ * Represents a member in a [Relation].
+ *
+ * @param type the type of the member
+ * @param id identifier of the member
+ * @param role role of the member in the [Relation]
+ */
+data class Member(val type: MemberType, val id: Long, val role: String?)
+
+/**
+ * Represents an [OSM Relation](https://wiki.openstreetmap.org/wiki/Relation).
+ *
+ * @param elementMetadata common element metadata
+ * @param tags element tags
+ * @param members list of relation members
+ */
 data class Relation(override val elementMetadata: ElementMetadata,
                     override val tags: Map<String, String>,
                     val members: List<Member>): Element()
+
+/**
+ * Represents the data produced whilst reading an
+ * [Open Street Map XML](https://wiki.openstreetmap.org/wiki/OSM_XML).
+ */
+interface Osm {
+
+    /**
+     * OSM API Version.
+     */
+    val version: String?
+
+    /**
+     * Generator of the XML.
+     */
+    val generator: String?
+
+    /**
+     * Geographical bounds of the area described.
+     */
+    val bounds: Bounds?
+
+    /**
+     * Flow of [Element] objects. It is to be expected that the elements will come in the regular
+     * order:
+     *  1 [Node] elements
+     *  2 [Way] elements
+     *  3 [Relation] elements
+     *
+     * As per the documentation, there are no guarantees that all such elements will be present
+     * of that any particular ordering within the blocks will be followed.
+     */
+    val elements: Flow<Element>
+}
