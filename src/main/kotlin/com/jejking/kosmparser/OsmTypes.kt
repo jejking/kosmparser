@@ -55,11 +55,13 @@ data class ElementMetadata(val id: Long,
                            val version: Long,
                            val changeSet: Long)
 
+sealed class OsmData { }
+
 /**
  * OSM Map [Element](https://wiki.openstreetmap.org/wiki/Elements) -
  * sealed supertype for [Node], [Way] and [Relation].
  */
-sealed class Element() {
+sealed class Element(): OsmData() {
     /**
      * Common element metadata.
      */
@@ -140,29 +142,27 @@ data class Relation(override val elementMetadata: ElementMetadata,
                     val members: List<Member>): Element()
 
 /**
+ * Represents metadata about an OSM XML.
+ *
+ * @param version OSM API version
+ * @param generator application generating the XML
+ * @param bounds geographical bounds of the area described
+ */
+data class OsmMetadata(val version: String?, val generator: String?, val bounds: Bounds?): OsmData()
+
+
+/**
  * Represents the data produced whilst reading an
  * [Open Street Map XML](https://wiki.openstreetmap.org/wiki/OSM_XML).
  */
 interface Osm {
 
     /**
-     * OSM API Version.
-     */
-    val version: String?
-
-    /**
-     * Generator of the XML.
-     */
-    val generator: String?
-
-    /**
-     * Geographical bounds of the area described.
-     */
-    val bounds: Bounds?
-
-    /**
-     * Flow of [Element] objects. It is to be expected that the elements will come in the regular
-     * order:
+     * Flow of [OsmData] objects.
+     *
+     * It is to be expected that the first object will a single [OsmMetadata] instance.
+     *
+     * Following that, the elements will come in the regular order:
      *  1 [Node] elements
      *  2 [Way] elements
      *  3 [Relation] elements
@@ -170,5 +170,5 @@ interface Osm {
      * As per the documentation, there are no guarantees that all such elements will be present
      * of that any particular ordering within the blocks will be followed.
      */
-    val elements: Flow<Element>
+    val data: Flow<OsmData>
 }
