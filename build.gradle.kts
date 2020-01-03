@@ -27,6 +27,8 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3")
 
+    implementation("com.fasterxml:aalto-xml:1.2.1")
+
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 
@@ -34,6 +36,8 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.3.0")
+
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.3.3")
 }
 
 tasks.withType<Test> {
