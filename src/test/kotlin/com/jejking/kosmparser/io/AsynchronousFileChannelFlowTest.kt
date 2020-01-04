@@ -8,19 +8,20 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 
 @ExperimentalCoroutinesApi
 class AsynchronousFileChannelFlowTest: FunSpec() {
 
-    val path = Paths.get(this.javaClass.getResource("/testfile1.bin").toURI())
+    val testFilePath = Paths.get(this.javaClass.getResource("/testfile1.bin").toURI())
 
     init {
         context("coroutine to read buffer") {
             test("should read in 256 bytes of zeroes") {
 
-                val channel = openFileChannel()
+                val channel = openFileChannel(testFilePath)
                 val buffer = ByteBuffer.allocate(256)
                 val bytesRead = async { channel.aRead(0, buffer) }
 
@@ -29,7 +30,7 @@ class AsynchronousFileChannelFlowTest: FunSpec() {
             }
 
             test("should read in 128 bytes of fives") {
-                val channel = openFileChannel()
+                val channel = openFileChannel(testFilePath)
                 val buffer = ByteBuffer.allocate(256)
                 val bytesRead = async { channel.aRead(256 * 5, buffer) }
 
@@ -41,7 +42,7 @@ class AsynchronousFileChannelFlowTest: FunSpec() {
             }
 
             test("should return -1 when attempting to read past end of file") {
-                val channel = openFileChannel()
+                val channel = openFileChannel(testFilePath)
                 val buffer = ByteBuffer.allocate(256)
                 val bytesRead = async { channel.aRead((256 * 5) + 128, buffer) }
 
@@ -51,22 +52,28 @@ class AsynchronousFileChannelFlowTest: FunSpec() {
 
         context("flow of byte array") {
             test("should stream six blocks of byte array") {
-                val channel = openFileChannel()
-                runBlocking { channel.asFlow().count() shouldBe 6 }
+                val channel = openFileChannel(testFilePath)
+                runBlocking { channel.asFlow(256).count() shouldBe 6 }
             }
 
             test("first five blocks should be of size 256 bytes") {
-                val channel = openFileChannel()
-                runBlocking { channel.asFlow().take(5).collect { value -> value.size shouldBe 256 } }
+                val channel = openFileChannel(testFilePath)
+                runBlocking { channel.asFlow(256).take(5).collect { value -> value.size shouldBe 256 } }
             }
 
             test("last block should be of size 128 bytes") {
-                val channel = openFileChannel()
-                runBlocking { channel.asFlow().drop(5).collect { value -> value.size shouldBe 128 } }
+                val channel = openFileChannel(testFilePath)
+                runBlocking { channel.asFlow(256).drop(5).collect { value -> value.size shouldBe 128 } }
+            }
+
+            test("should deliver zero elements on reading empty file") {
+                val emptyFilePath = Paths.get(this.javaClass.getResource("/emptyfile").toURI())
+                val channel = openFileChannel(emptyFilePath)
+                runBlocking { channel.asFlow(256).count() shouldBe 0 }
             }
         }
     }
 
-    private fun openFileChannel() =
+    private fun openFileChannel(path: Path) =
             autoClose(AsynchronousFileChannel.open(path, StandardOpenOption.READ))
 }
