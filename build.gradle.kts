@@ -38,6 +38,8 @@ dependencies {
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.3.0")
 
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.3.3")
+
+    testImplementation("com.github.tomakehurst:wiremock-jre8:2.25.1")
 }
 
 tasks.withType<Test> {
