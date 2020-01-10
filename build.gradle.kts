@@ -27,6 +27,10 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3")
 
+    implementation("org.reactivestreams:reactive-streams:1.0.3")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.3.3")
+
     implementation("com.fasterxml:aalto-xml:1.2.1")
 
     // Use the Kotlin test library.
