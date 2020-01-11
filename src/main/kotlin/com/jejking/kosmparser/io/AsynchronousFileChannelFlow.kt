@@ -5,6 +5,8 @@ import kotlinx.coroutines.flow.flow
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import java.nio.channels.CompletionHandler
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -56,3 +58,5 @@ fun readBufferToArray(byteBuffer: ByteBuffer, bytesRead: Int): ByteArray {
     byteBuffer.clear()
     return targetArray
 }
+
+fun Path.openAsynchronousFileChannelForRead() = AsynchronousFileChannel.open(this, StandardOpenOption.READ)
