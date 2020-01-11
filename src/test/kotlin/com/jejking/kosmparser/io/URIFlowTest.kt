@@ -2,15 +2,17 @@ package com.jejking.kosmparser.io
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.http.Fault
 import io.kotlintest.Spec
 import io.kotlintest.TestCase
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.reduce
 import kotlinx.coroutines.runBlocking
+import java.io.IOException
 import java.net.URI
 import java.net.http.HttpClient
 
@@ -55,10 +57,13 @@ class URIFlowTest: StringSpec() {
                         .withBody(response)
                         .withHeader("Content-Type", "application/json"))
             )
-
             val uri = URI.create("${baseUri}/info")
+
             runBlocking {
-                val actualResponse = uri.asFlow(httpClient).map{ String(it) }.reduce { accumulator, value ->  accumulator + value}
+                val actualResponse = uri.asFlow(httpClient)
+                                        .map{ String(it) }
+                                        .reduce { accumulator, value ->  accumulator + value}
+
                 actualResponse shouldBe response
             }
         }
@@ -71,13 +76,25 @@ class URIFlowTest: StringSpec() {
 
         }
 
-        "should propagate any exceptions".config(enabled = false) {
+        "should propagate any exceptions" {
+            wiremock.register(WireMock.get("/fault")
+                    .willReturn(WireMock.aResponse()
+                            .withFault(Fault.EMPTY_RESPONSE)))
+            val uri = URI.create("${baseUri}/fault")
 
+            val flow = uri.asFlow(httpClient)
+            runBlocking {
+                shouldThrow<IOException> { flow.collect {} }
+            }
         }
 
         "should throw exception if URI is not http or https" {
-            val uris = listOf("file:///tmp/file", "mailto:foo@bar.com", "data:text/vnd-example+xyz;foo=bar;base64,R0lGODdh").map { URI.create(it) }
-            uris.forEach { it ->
+            val uris = listOf("file:///tmp/file",
+                              "mailto:foo@bar.com",
+                               "data:text/vnd-example+xyz;foo=bar;base64,R0lGODdh")
+                    .map { URI.create(it) }
+
+            uris.forEach {
                 shouldThrow<IllegalStateException> {
                     it.asFlow(httpClient)
                 }
