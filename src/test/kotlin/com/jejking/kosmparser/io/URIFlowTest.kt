@@ -68,12 +68,20 @@ class URIFlowTest: StringSpec() {
             }
         }
 
-        "should throw exception if HTTP response is 4xx".config(enabled = false) {
-
-        }
-
-        "should throw exception if HTTP response is 5xx".config(enabled = false) {
-
+        "should throw exception if HTTP response is 4xx" {
+            val response = """{"success":false"}"""
+            wiremock.register(WireMock.get("/400")
+                    .willReturn(WireMock.aResponse()
+                            .withStatus(404)
+                            .withBody(response)
+                            .withHeader("Content-Type", "application/json"))
+            )
+            val flow = URI.create("${baseUri}/400").asFlow(httpClient)
+            runBlocking {
+                shouldThrow<IOException> {
+                    flow.collect( { } )
+                }
+            }
         }
 
         "should propagate any exceptions" {
