@@ -25,7 +25,7 @@ data class StartElement(val localName: String, val attributes: Map<String, Strin
 
 /**
  * End of an Element.
- * 
+ *
  * @see [XMLStreamConstants.END_ELEMENT]
  */
 data class EndElement(val localName: String): ParseEvent()
