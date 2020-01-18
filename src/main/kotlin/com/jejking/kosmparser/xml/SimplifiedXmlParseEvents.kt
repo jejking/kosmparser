@@ -64,7 +64,9 @@ data class Space(val text: String): ParseEvent()
  *
  * @see [XMLStreamConstants.START_DOCUMENT]
  */
-object StartDocument: ParseEvent()
+data class StartDocument(val systemId: String,
+                         val characterEncodingScheme: String,
+                         val isStandalone: Boolean): ParseEvent()
 
 /**
  * End of document.
