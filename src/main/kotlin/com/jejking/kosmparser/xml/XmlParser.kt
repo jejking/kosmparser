@@ -4,6 +4,8 @@ import com.fasterxml.aalto.AsyncByteArrayFeeder
 import com.fasterxml.aalto.AsyncXMLStreamReader
 import com.fasterxml.aalto.stax.InputFactoryImpl
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.transform
 import javax.xml.stream.XMLStreamConstants
 
@@ -27,6 +29,9 @@ object XmlParser {
                 }
                 next = parser.next()
             }
+        }.onCompletion {
+            parser.inputFeeder.endOfInput()
+            emit(endDocument(parser))
         }
     }
 

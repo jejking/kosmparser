@@ -62,7 +62,7 @@ class XmlParserTest: FunSpec() {
                 }
             }
 
-            test("should emit end document").config(enabled = false) {
+            test("should emit end document") {
                 val parseEventFlow = toParseEventFlow("<myxml/>")
                 runBlocking {
                     val parseEvent = parseEventFlow.filter{ it is EndDocument }.first()
