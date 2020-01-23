@@ -4,31 +4,36 @@ import com.fasterxml.aalto.AsyncByteArrayFeeder
 import com.fasterxml.aalto.AsyncXMLStreamReader
 import com.fasterxml.aalto.stax.InputFactoryImpl
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.transform
 import javax.xml.stream.XMLStreamConstants
 
 object XmlParser {
 
+    @kotlinx.coroutines.ExperimentalCoroutinesApi
     fun toParseEvents(byteArrayFlow: Flow<ByteArray>): Flow<ParseEvent> {
         val inputFactory = InputFactoryImpl()
         val parser = inputFactory.createAsyncFor(ByteArray(0))
 
         return byteArrayFlow.transform {
             parser.inputFeeder.feedInput(it, 0, it.size)
-            while (parser.hasNext()) {
-                when(val next = parser.next()) {
+            var next = parser.next()
+            while (next != AsyncXMLStreamReader.EVENT_INCOMPLETE) {
+
+                when (next) {
                     XMLStreamConstants.START_DOCUMENT -> emit(startDocument(parser))
                     XMLStreamConstants.START_ELEMENT -> emit(startElement(parser))
                     XMLStreamConstants.END_ELEMENT -> emit(endElement(parser))
-                    XMLStreamConstants.END_DOCUMENT -> {
-                        parser.close()
-                        emit(EndDocument)
-                    }
+                    else -> println("Got ${next}, cannot handle yet")
                 }
-
+                next = parser.next()
             }
         }
+    }
+
+
+    private fun endDocument(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): ParseEvent {
+        parser.close()
+        return EndDocument
     }
 
     private fun endElement(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): EndElement {
