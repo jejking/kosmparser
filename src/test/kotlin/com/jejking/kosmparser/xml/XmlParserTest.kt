@@ -82,6 +82,14 @@ class XmlParserTest: FunSpec() {
                     parseEvent shouldBe ProcessingInstruction("xml-stylesheet", "href=\"mystyle.xslt\" type=\"text/xsl\"")
                 }
             }
+
+            test("should emit characters") {
+                val parseEventFlow = toParseEventFlow("<myxml>some text</myxml>")
+                runBlocking {
+                    val parseEvent = parseEventFlow.filter{ it is Characters }.first()
+                    parseEvent shouldBe Characters("some text")
+                }
+            }
         }
     }
 
