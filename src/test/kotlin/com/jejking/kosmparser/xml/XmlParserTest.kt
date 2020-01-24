@@ -128,10 +128,21 @@ class XmlParserTest: FunSpec() {
                 }
             }
         }
+
+        context("multiple byte arrays") {
+            test("should work with multiple input byte arrays") {
+                val parseEventFlow = toParseEventFlow("""<myxml foo="bar"""", """ wibble="wobble"/>""")
+                runBlocking {
+                    val element = parseEventFlow.filter{ it is StartElement }.first()
+                    element shouldBe StartElement("myxml", mapOf("foo" to "bar", "wibble" to "wobble"))
+                }
+            }
+
+        }
     }
 
-    private fun toParseEventFlow(xml: String): Flow<ParseEvent> {
-        val byteArrayFlow = listOf(xml).map { it.encodeToByteArray() }.asFlow()
+    private fun toParseEventFlow(vararg xmlParts: String): Flow<ParseEvent> {
+        val byteArrayFlow = listOf(*xmlParts).map { it.encodeToByteArray() }.asFlow()
         return toParseEvents(byteArrayFlow)
     }
 
