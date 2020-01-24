@@ -104,6 +104,29 @@ class XmlParserTest: FunSpec() {
                 }
 
             }
+
+            // ignorable white space depends on validation, so we should ignore it
+            test("should emit space as characters") {
+                val xml = "<myxml>  <anotherElement/></myxml>"
+                val parseEventFlow = toParseEventFlow(xml)
+                runBlocking {
+                    val parseEvent = parseEventFlow.filter{ it is Characters }.first()
+                    parseEvent shouldBe Characters("  ")
+                }
+            }
+
+            test("should emit cdata") {
+                val xml = """
+                    <myxml>
+                        <![CDATA[ some cdata ]]>
+                    </myxml>
+                """.trimIndent()
+                val parseEventFlow = toParseEventFlow(xml)
+                runBlocking {
+                    val parseEvent = parseEventFlow.filter{ it is CData }.first()
+                    parseEvent shouldBe CData(" some cdata ")
+                }
+            }
         }
     }
 
