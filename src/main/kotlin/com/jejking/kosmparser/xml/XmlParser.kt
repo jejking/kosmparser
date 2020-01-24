@@ -25,6 +25,7 @@ object XmlParser {
                     XMLStreamConstants.START_DOCUMENT -> emit(startDocument(parser))
                     XMLStreamConstants.START_ELEMENT -> emit(startElement(parser))
                     XMLStreamConstants.END_ELEMENT -> emit(endElement(parser))
+                    XMLStreamConstants.PROCESSING_INSTRUCTION -> emit(processingInstruction(parser))
                     else -> println("Got ${next}, cannot handle yet")
                 }
                 next = parser.next()
@@ -33,6 +34,10 @@ object XmlParser {
             parser.inputFeeder.endOfInput()
             emit(endDocument(parser))
         }
+    }
+
+    private fun processingInstruction(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): ParseEvent {
+        return ProcessingInstruction(parser.piTarget, parser.piData)
     }
 
 

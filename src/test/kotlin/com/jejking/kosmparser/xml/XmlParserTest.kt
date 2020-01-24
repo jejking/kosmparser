@@ -69,6 +69,19 @@ class XmlParserTest: FunSpec() {
                     parseEvent shouldBe EndDocument
                 }
             }
+
+            test("should emit processing instruction") {
+                val xml = """
+                    <myxml>
+                    <?xml-stylesheet href="mystyle.xslt" type="text/xsl"?>
+                    </myxml>
+                """.trimIndent()
+                val parseEventFlow = toParseEventFlow(xml)
+                runBlocking {
+                    val parseEvent = parseEventFlow.filter { it is ProcessingInstruction }.first()
+                    parseEvent shouldBe ProcessingInstruction("xml-stylesheet", "href=\"mystyle.xslt\" type=\"text/xsl\"")
+                }
+            }
         }
     }
 
