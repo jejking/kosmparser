@@ -90,6 +90,20 @@ class XmlParserTest: FunSpec() {
                     parseEvent shouldBe Characters("some text")
                 }
             }
+
+            test("should emit comment") {
+                val xml = """
+                    <myxml>
+                        <!-- comment text -->
+                    </myxml>
+                """.trimIndent()
+                val parseEventFlow = toParseEventFlow(xml)
+                runBlocking {
+                    val parseEvent = parseEventFlow.filter{ it is Comment }.first()
+                    parseEvent shouldBe Comment(" comment text ")
+                }
+
+            }
         }
     }
 
