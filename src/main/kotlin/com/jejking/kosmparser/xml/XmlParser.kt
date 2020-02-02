@@ -11,6 +11,11 @@ import javax.xml.stream.XMLStreamConstants
 
 object XmlParser {
 
+    /**
+     * Creates a Flow of ParseEvents from the underlying flow of byte arrays.
+     *
+     * Note that the flow created does not coalesce text.
+     */
     @kotlinx.coroutines.ExperimentalCoroutinesApi
     fun toParseEvents(byteArrayFlow: Flow<ByteArray>): Flow<ParseEvent> {
         val inputFactory = InputFactoryImpl()
@@ -36,6 +41,29 @@ object XmlParser {
         }.onCompletion {
             parser.inputFeeder.endOfInput()
             emit(endDocument(parser))
+        }
+    }
+
+    fun Flow<ParseEvent>.coalesceText(): Flow<ParseEvent> {
+
+        var textBuffer: StringBuilder = StringBuilder()
+        var buffering = false
+
+        return this.transform {
+            if (it is Characters) {
+                if (!buffering) {
+                    buffering = true
+                }
+                textBuffer.append(it.text)
+            } else {
+                if (buffering) {
+                    buffering = false
+                    val buffered = textBuffer.toString()
+                    textBuffer = StringBuilder()
+                    emit(Characters(buffered))
+                }
+                emit(it)
+            }
         }
     }
 

@@ -1,6 +1,7 @@
 package com.jejking.kosmparser.xml
 
 import com.jejking.kosmparser.xml.XmlParser.toParseEvents
+import com.jejking.kosmparser.xml.XmlParser.coalesceText
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FunSpec
 import kotlinx.coroutines.flow.*
@@ -139,6 +140,36 @@ class XmlParserTest: FunSpec() {
             }
 
         }
+
+        context("coalescing characters") {
+            test("one characters parse event when characters followed by end element") {
+                val parseEventFlow = toCoalescingParseEventFlow("<myxml>some text</myxml>")
+                runBlocking {
+                    val parseEvent = parseEventFlow.filter{ it is Characters }.first()
+                    parseEvent shouldBe Characters("some text")
+                }
+            }
+
+            test("one characters parse event when two characters parse events emitted before end element") {
+                val parseEventFlow = toCoalescingParseEventFlow("<myxml>some", " text</myxml>")
+                runBlocking {
+                    val parseEvent = parseEventFlow.filter{ it is Characters }.first()
+                    parseEvent shouldBe Characters("some text")
+                }
+            }
+        }
+
+        context("coalescing cdata") {
+
+        }
+
+        context("coalescing comment") {
+
+        }
+    }
+
+    private fun toCoalescingParseEventFlow(vararg xmlParts: String): Flow<ParseEvent> {
+        return toParseEventFlow(*xmlParts).coalesceText()
     }
 
     private fun toParseEventFlow(vararg xmlParts: String): Flow<ParseEvent> {
