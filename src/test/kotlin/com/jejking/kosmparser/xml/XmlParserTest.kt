@@ -160,12 +160,30 @@ class XmlParserTest: FunSpec() {
         }
 
         context("coalescing cdata") {
+            test("one cdata parse event when followed by end element") {
+                val xml = """
+                    <myxml>
+                        <![CDATA[ some cdata ]]>
+                    </myxml>
+                """.trimIndent()
+                val parseEventFlow = toCoalescingParseEventFlow(xml)
+                runBlocking {
+                    val parseEvent = parseEventFlow.filter{ it is CData }.first()
+                    parseEvent shouldBe CData(" some cdata ")
+                }
+            }
 
+            test("one cdata parse event when two cdata parse events emitted before end element") {
+                val xml1 = """<myxml><![CDATA[ some"""
+                val xml2 = """ cdata ]]></myxml>"""
+                val parseEventFlow = toCoalescingParseEventFlow(xml1, xml2)
+                runBlocking {
+                    val parseEvent = parseEventFlow.filter{ it is CData }.first()
+                    parseEvent shouldBe CData(" some cdata ")
+                }
+            }
         }
-
-        context("coalescing comment") {
-
-        }
+        
     }
 
     private fun toCoalescingParseEventFlow(vararg xmlParts: String): Flow<ParseEvent> {
