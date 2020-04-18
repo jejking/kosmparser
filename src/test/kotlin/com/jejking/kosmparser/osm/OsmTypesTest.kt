@@ -1,6 +1,5 @@
-package com.jejking.kosmparser
+package com.jejking.kosmparser.osm
 
-import io.kotlintest.data.forall
 import io.kotlintest.properties.Gen
 import io.kotlintest.properties.forAll
 import io.kotlintest.shouldBe

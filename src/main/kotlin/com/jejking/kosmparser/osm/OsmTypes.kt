@@ -1,4 +1,4 @@
-package com.jejking.kosmparser
+package com.jejking.kosmparser.osm
 
 import kotlinx.coroutines.flow.Flow
 import java.time.ZonedDateTime
@@ -154,21 +154,15 @@ data class OsmMetadata(val version: String?, val generator: String?, val bounds:
 /**
  * Represents the data produced whilst reading an
  * [Open Street Map XML](https://wiki.openstreetmap.org/wiki/OSM_XML).
+ *
+ * It is to be expected that the first object will a single [OsmMetadata] instance.
+ *
+ * Following that, the elements will come in the regular order:
+ *  1 [Node] elements
+ *  2 [Way] elements
+ *  3 [Relation] elements
+ *
+ * As per the documentation, there are no guarantees that all such elements will be present
+ * of that any particular ordering within the blocks will be followed.
  */
-interface Osm {
-
-    /**
-     * Flow of [OsmData] objects.
-     *
-     * It is to be expected that the first object will a single [OsmMetadata] instance.
-     *
-     * Following that, the elements will come in the regular order:
-     *  1 [Node] elements
-     *  2 [Way] elements
-     *  3 [Relation] elements
-     *
-     * As per the documentation, there are no guarantees that all such elements will be present
-     * of that any particular ordering within the blocks will be followed.
-     */
-    val data: Flow<OsmData>
-}
+typealias OsmDataFlow = Flow<OsmData>

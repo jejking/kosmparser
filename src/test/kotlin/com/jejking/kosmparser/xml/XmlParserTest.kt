@@ -183,7 +183,7 @@ class XmlParserTest: FunSpec() {
                 }
             }
         }
-        
+
     }
 
     private fun toCoalescingParseEventFlow(vararg xmlParts: String): Flow<ParseEvent> {
