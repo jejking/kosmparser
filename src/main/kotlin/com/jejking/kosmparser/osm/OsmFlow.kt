@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 object OsmFlow {
 
-    fun toOsmDataFlow(parseEventFlow: Flow<ParseEvent>): Flow<OsmData> {
-        return TODO()
-    }
+  fun toOsmDataFlow(parseEventFlow: Flow<ParseEvent>): Flow<OsmData> {
+    return TODO()
+  }
 }

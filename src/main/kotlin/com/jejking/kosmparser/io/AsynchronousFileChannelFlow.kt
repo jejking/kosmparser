@@ -21,17 +21,17 @@ import kotlin.coroutines.suspendCoroutine
  * @param buf the  byte buffer to read into
  */
 suspend fun AsynchronousFileChannel.aRead(offset: Long, buf: ByteBuffer): Int =
-    suspendCoroutine { cont ->
-        read(buf, offset, Unit, object : CompletionHandler<Int, Unit> {
-            override fun completed(bytesRead: Int, attachment: Unit) {
-                cont.resume(bytesRead)
-            }
+  suspendCoroutine { cont ->
+    read(buf, offset, Unit, object : CompletionHandler<Int, Unit> {
+      override fun completed(bytesRead: Int, attachment: Unit) {
+        cont.resume(bytesRead)
+      }
 
-            override fun failed(exception: Throwable, attachment: Unit) {
-                cont.resumeWithException(exception)
-            }
-        })
-    }
+      override fun failed(exception: Throwable, attachment: Unit) {
+        cont.resumeWithException(exception)
+      }
+    })
+  }
 
 /**
  * Exposes the file as a [Flow], reading it from the start in chunks
@@ -40,23 +40,23 @@ suspend fun AsynchronousFileChannel.aRead(offset: Long, buf: ByteBuffer): Int =
  * @param bufferSize bufferSize to allocate, must be positive
  */
 fun AsynchronousFileChannel.asFlow(bufferSize: Int = 1024): Flow<ByteArray> = flow {
-    var offset = 0L
-    val buffer = ByteBuffer.allocate(bufferSize)
-    var bytesRead = aRead(offset, buffer)
+  var offset = 0L
+  val buffer = ByteBuffer.allocate(bufferSize)
+  var bytesRead = aRead(offset, buffer)
 
-    while (bytesRead != -1) {
-        emit(readBufferToArray(buffer, bytesRead))
-        offset += bytesRead
-        bytesRead = aRead(offset, buffer)
-    }
+  while (bytesRead != -1) {
+    emit(readBufferToArray(buffer, bytesRead))
+    offset += bytesRead
+    bytesRead = aRead(offset, buffer)
+  }
 }
 
 fun readBufferToArray(byteBuffer: ByteBuffer, bytesRead: Int): ByteArray {
-    val targetArray = ByteArray(bytesRead)
-    byteBuffer.rewind()
-    byteBuffer.get(targetArray)
-    byteBuffer.clear()
-    return targetArray
+  val targetArray = ByteArray(bytesRead)
+  byteBuffer.rewind()
+  byteBuffer.get(targetArray)
+  byteBuffer.clear()
+  return targetArray
 }
 
 fun Path.openAsynchronousFileChannelForRead() = AsynchronousFileChannel.open(this, StandardOpenOption.READ)

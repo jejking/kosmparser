@@ -19,10 +19,10 @@ val LON_RANGE = MIN_LON.rangeTo(MAX_LON)
  * @throws IllegalStateException if values outside permitted range are supplied
  */
 data class Point(val lat: Double, val lon: Double) {
-    init {
-        check(LAT_RANGE.contains(lat)) {"$lat out of range (-90, 90)"}
-        check(LON_RANGE.contains(lon)) {"$lon out of range (-180, 180)"}
-    }
+  init {
+    check(LAT_RANGE.contains(lat)) { "$lat out of range (-90, 90)" }
+    check(LON_RANGE.contains(lon)) { "$lon out of range (-180, 180)" }
+  }
 }
 
 /**
@@ -32,7 +32,6 @@ data class Point(val lat: Double, val lon: Double) {
  * @param maxPoint - largest latitutde and longitude pair
  */
 data class Bounds(val minPoint: Point, val maxPoint: Point)
-
 
 
 /**
@@ -55,22 +54,22 @@ data class ElementMetadata(val id: Long,
                            val version: Long,
                            val changeSet: Long)
 
-sealed class OsmData { }
+sealed class OsmData {}
 
 /**
  * OSM Map [Element](https://wiki.openstreetmap.org/wiki/Elements) -
  * sealed supertype for [Node], [Way] and [Relation].
  */
-sealed class Element(): OsmData() {
-    /**
-     * Common element metadata.
-     */
-    abstract val elementMetadata: ElementMetadata
+sealed class Element() : OsmData() {
+  /**
+   * Common element metadata.
+   */
+  abstract val elementMetadata: ElementMetadata
 
-    /**
-     * Element tags - may be empty.
-     */
-    abstract val tags: Map<String, String>
+  /**
+   * Element tags - may be empty.
+   */
+  abstract val tags: Map<String, String>
 }
 
 /**
@@ -82,7 +81,7 @@ sealed class Element(): OsmData() {
  */
 data class Node(override val elementMetadata: ElementMetadata,
                 override val tags: Map<String, String>,
-                val point: Point): Element()
+                val point: Point) : Element()
 
 /**
  * Represents an [OSM Way](https://wiki.openstreetmap.org/wiki/Way). It would normally have
@@ -96,29 +95,29 @@ data class Node(override val elementMetadata: ElementMetadata,
  */
 data class Way(override val elementMetadata: ElementMetadata,
                override val tags: Map<String, String>,
-               val nds: List<Long>): Element() {
+               val nds: List<Long>) : Element() {
 
-    init {
-        check(nds.size <= 2000) {"nds exceeds 2000 limit with ${nds.size} elements."}
-    }
+  init {
+    check(nds.size <= 2000) { "nds exceeds 2000 limit with ${nds.size} elements." }
+  }
 
-    /**
-     * Declares if way is faulty - i.e has less than 2 node identifiers.
-     */
-    fun isFaulty(): Boolean = nds.size < 2
+  /**
+   * Declares if way is faulty - i.e has less than 2 node identifiers.
+   */
+  fun isFaulty(): Boolean = nds.size < 2
 
-    /**
-     * Declares if way is closed - i.e. has 2 or more identifiers where the first and the
-     * last identifier are the same. Note - a faulty way is not considered closed.
-     */
-    fun isClosed(): Boolean = !isFaulty() && nds.first() == nds.last()
+  /**
+   * Declares if way is closed - i.e. has 2 or more identifiers where the first and the
+   * last identifier are the same. Note - a faulty way is not considered closed.
+   */
+  fun isClosed(): Boolean = !isFaulty() && nds.first() == nds.last()
 }
 
 /**
  * Describes type of a [Member] in a [Relation].
  */
 enum class MemberType {
-    NODE, WAY, RELATION
+  NODE, WAY, RELATION
 }
 
 /**
@@ -139,7 +138,7 @@ data class Member(val type: MemberType, val id: Long, val role: String?)
  */
 data class Relation(override val elementMetadata: ElementMetadata,
                     override val tags: Map<String, String>,
-                    val members: List<Member>): Element()
+                    val members: List<Member>) : Element()
 
 /**
  * Represents metadata about an OSM XML.
@@ -148,7 +147,7 @@ data class Relation(override val elementMetadata: ElementMetadata,
  * @param generator application generating the XML
  * @param bounds geographical bounds of the area described
  */
-data class OsmMetadata(val version: String?, val generator: String?, val bounds: Bounds?): OsmData()
+data class OsmMetadata(val version: String?, val generator: String?, val bounds: Bounds?) : OsmData()
 
 
 /**

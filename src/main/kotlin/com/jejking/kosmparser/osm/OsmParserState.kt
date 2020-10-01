@@ -4,7 +4,6 @@ import com.jejking.kosmparser.xml.EndElement
 import com.jejking.kosmparser.xml.ParseEvent
 import com.jejking.kosmparser.xml.StartDocument
 import com.jejking.kosmparser.xml.StartElement
-import java.lang.IllegalStateException
 
 /**
  * States.
@@ -32,77 +31,76 @@ import java.lang.IllegalStateException
  */
 
 sealed class ParserState {
-    abstract fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?>
+  abstract fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?>
 }
 
 
+class ReadingOsmMetadata : ParserState() {
 
-class ReadingOsmMetadata: ParserState() {
+  private var seenOsmElement = false
+  private var apiVersion = ""
+  private var generator = ""
 
-    private var seenOsmElement = false
-    private var apiVersion = ""
-    private var generator = ""
-
-    override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
-        return when (xmlparseEvent) {
-            is StartDocument -> this to null
-            is StartElement -> readStartElement(xmlparseEvent)
-            is EndElement -> readEndElement(xmlparseEvent)
-            else -> throw IllegalStateException()
-        }
+  override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
+    return when (xmlparseEvent) {
+      is StartDocument -> this to null
+      is StartElement -> readStartElement(xmlparseEvent)
+      is EndElement -> readEndElement(xmlparseEvent)
+      else -> throw IllegalStateException()
     }
+  }
 
-    private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
-        return when (endElement.localName) {
-            "osm" -> this to null
-            else -> throw IllegalStateException()
-        }
+  private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
+    return when (endElement.localName) {
+      "osm" -> this to null
+      else -> throw IllegalStateException()
     }
+  }
 
-    private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
-        return when (startElement.localName) {
-            "osm" -> readOsmElement(startElement)
-            else -> throw IllegalStateException()
-        }
+  private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
+    return when (startElement.localName) {
+      "osm" -> readOsmElement(startElement)
+      else -> throw IllegalStateException()
     }
+  }
 
-    private fun readOsmElement(osmElement: StartElement): Pair<ParserState, OsmData?> {
-        this.apiVersion = osmElement.attributes.getOrThrow("version")
-        this.generator = osmElement.attributes.getOrThrow("generator")
-        this.seenOsmElement = true
-        return this to null
-    }
+  private fun readOsmElement(osmElement: StartElement): Pair<ParserState, OsmData?> {
+    this.apiVersion = osmElement.attributes.getOrThrow("version")
+    this.generator = osmElement.attributes.getOrThrow("generator")
+    this.seenOsmElement = true
+    return this to null
+  }
 }
 
 
-class ReadingTags: ParserState() {
-    override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
-        TODO("Not yet implemented")
-    }
+class ReadingTags : ParserState() {
+  override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
+    TODO("Not yet implemented")
+  }
 }
 
-class ReadingNodes: ParserState() {
-    override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
-        TODO("Not yet implemented")
-    }
+class ReadingNodes : ParserState() {
+  override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
+    TODO("Not yet implemented")
+  }
 }
 
-class ReadingWays: ParserState() {
-    override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
-        TODO("Not yet implemented")
-    }
+class ReadingWays : ParserState() {
+  override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
+    TODO("Not yet implemented")
+  }
 }
 
-class ReadingRelations: ParserState() {
-    override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
-        TODO("Not yet implemented")
-    }
+class ReadingRelations : ParserState() {
+  override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
+    TODO("Not yet implemented")
+  }
 }
 
-class Finished: ParserState() {
-    override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
-        TODO("Not yet implemented")
-    }
+class Finished : ParserState() {
+  override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
+    TODO("Not yet implemented")
+  }
 }
 
 fun Map<String, String>.getOrThrow(key: String): String = this[key] ?: throw IllegalStateException("Missing key $key")

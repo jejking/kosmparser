@@ -30,37 +30,37 @@ val validSchemes = setOf("http", "https")
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 fun URI.asFlow(httpClient: HttpClient, timeout: Duration = Duration.ofSeconds(10)): Flow<ByteArray> {
 
-    check(scheme in validSchemes)
-    val theURI = this
+  check(scheme in validSchemes)
+  val theURI = this
 
-    return flow {
-        val response = doGet(timeout, theURI, httpClient)
-        checkStatusCode(response, theURI)
+  return flow {
+    val response = doGet(timeout, theURI, httpClient)
+    checkStatusCode(response, theURI)
 
-        toPublisher(response.body()).asFlow().collect { byteBufferList ->
-            byteBufferList.forEach { byteBuffer ->
-                val target = ByteArray(byteBuffer.limit())
-                byteBuffer.get(target)
-                emit(target)
-            }
-        }
+    toPublisher(response.body()).asFlow().collect { byteBufferList ->
+      byteBufferList.forEach { byteBuffer ->
+        val target = ByteArray(byteBuffer.limit())
+        byteBuffer.get(target)
+        emit(target)
+      }
     }
+  }
 }
 
 private fun checkStatusCode(response: HttpResponse<java.util.concurrent.Flow.Publisher<List<ByteBuffer>>>, theURI: URI) {
-    val statusCode = response.statusCode()
+  val statusCode = response.statusCode()
 
-    if (statusCode != 200) {
-        throw IOException("Non-200 Status Code ${statusCode} at URI ${theURI}")
-    }
+  if (statusCode != 200) {
+    throw IOException("Non-200 Status Code ${statusCode} at URI ${theURI}")
+  }
 }
 
 private fun doGet(timeout: Duration, theURI: URI, httpClient: HttpClient): HttpResponse<java.util.concurrent.Flow.Publisher<List<ByteBuffer>>> {
-    val request = HttpRequest.newBuilder()
-            .timeout(timeout)
-            .uri(theURI)
-            .GET()
-            .build()
+  val request = HttpRequest.newBuilder()
+    .timeout(timeout)
+    .uri(theURI)
+    .GET()
+    .build()
 
-    return httpClient.send(request, HttpResponse.BodyHandlers.ofPublisher())
+  return httpClient.send(request, HttpResponse.BodyHandlers.ofPublisher())
 }
