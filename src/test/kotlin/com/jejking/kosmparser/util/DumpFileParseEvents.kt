@@ -2,7 +2,7 @@ package com.jejking.kosmparser.util
 
 import com.jejking.kosmparser.io.asFlow
 import com.jejking.kosmparser.xml.Characters
-import com.jejking.kosmparser.xml.XmlParser.toParseEvents
+import com.jejking.kosmparser.xml.XmlFlowMapper.toParseEvents
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filter

@@ -1,7 +1,7 @@
 package com.jejking.kosmparser.xml
 
-import com.jejking.kosmparser.xml.XmlParser.coalesceText
-import com.jejking.kosmparser.xml.XmlParser.toParseEvents
+import com.jejking.kosmparser.xml.XmlFlowMapper.coalesceText
+import com.jejking.kosmparser.xml.XmlFlowMapper.toParseEvents
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -13,7 +13,7 @@ import kotlinx.coroutines.runBlocking
 
 @ExperimentalCoroutinesApi
 @ExperimentalStdlibApi
-class XmlParserTest : FunSpec() {
+class XmlFlowMapperTest : FunSpec() {
 
   init {
     context("single byte array") {
@@ -191,11 +191,11 @@ class XmlParserTest : FunSpec() {
 
   }
 
-  private fun toCoalescingParseEventFlow(vararg xmlParts: String): Flow<ParseEvent> {
+  private fun toCoalescingParseEventFlow(vararg xmlParts: String): Flow<SimpleXmlParseEvent> {
     return toParseEventFlow(*xmlParts).coalesceText()
   }
 
-  private fun toParseEventFlow(vararg xmlParts: String): Flow<ParseEvent> {
+  private fun toParseEventFlow(vararg xmlParts: String): Flow<SimpleXmlParseEvent> {
     val byteArrayFlow = listOf(*xmlParts).map { it.encodeToByteArray() }.asFlow()
     return toParseEvents(byteArrayFlow)
   }

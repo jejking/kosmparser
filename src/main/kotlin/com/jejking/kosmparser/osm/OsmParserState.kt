@@ -1,7 +1,7 @@
 package com.jejking.kosmparser.osm
 
 import com.jejking.kosmparser.xml.EndElement
-import com.jejking.kosmparser.xml.ParseEvent
+import com.jejking.kosmparser.xml.SimpleXmlParseEvent
 import com.jejking.kosmparser.xml.StartDocument
 import com.jejking.kosmparser.xml.StartElement
 
@@ -31,7 +31,7 @@ import com.jejking.kosmparser.xml.StartElement
  */
 
 sealed class ParserState {
-  abstract fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?>
+  abstract fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?>
 }
 
 
@@ -41,11 +41,11 @@ class ReadingOsmMetadata : ParserState() {
   private var apiVersion = ""
   private var generator = ""
 
-  override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
-    return when (xmlparseEvent) {
+  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+    return when (xmlparseEventSimpleXml) {
       is StartDocument -> this to null
-      is StartElement -> readStartElement(xmlparseEvent)
-      is EndElement -> readEndElement(xmlparseEvent)
+      is StartElement -> readStartElement(xmlparseEventSimpleXml)
+      is EndElement -> readEndElement(xmlparseEventSimpleXml)
       else -> throw IllegalStateException()
     }
   }
@@ -74,31 +74,31 @@ class ReadingOsmMetadata : ParserState() {
 
 
 class ReadingTags : ParserState() {
-  override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
+  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     TODO("Not yet implemented")
   }
 }
 
 class ReadingNodes : ParserState() {
-  override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
+  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     TODO("Not yet implemented")
   }
 }
 
 class ReadingWays : ParserState() {
-  override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
+  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     TODO("Not yet implemented")
   }
 }
 
 class ReadingRelations : ParserState() {
-  override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
+  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     TODO("Not yet implemented")
   }
 }
 
 class Finished : ParserState() {
-  override fun accept(xmlparseEvent: ParseEvent): Pair<ParserState, OsmData?> {
+  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     TODO("Not yet implemented")
   }
 }

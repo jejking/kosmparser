@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.transform
 import javax.xml.stream.XMLStreamConstants
 
-object XmlParser {
+object XmlFlowMapper {
 
   /**
    * Creates a Flow of ParseEvents from the underlying flow of byte arrays.
@@ -16,7 +16,7 @@ object XmlParser {
    * Note that the flow created does not coalesce text.
    */
   @kotlinx.coroutines.ExperimentalCoroutinesApi
-  fun toParseEvents(byteArrayFlow: Flow<ByteArray>): Flow<ParseEvent> {
+  fun toParseEvents(byteArrayFlow: Flow<ByteArray>): Flow<SimpleXmlParseEvent> {
     val inputFactory = InputFactoryImpl()
     val parser = inputFactory.createAsyncFor(ByteArray(0))
 
@@ -43,7 +43,7 @@ object XmlParser {
     }
   }
 
-  fun Flow<ParseEvent>.coalesceText(): Flow<ParseEvent> {
+  fun Flow<SimpleXmlParseEvent>.coalesceText(): Flow<SimpleXmlParseEvent> {
 
     var textBuffer: StringBuilder = StringBuilder()
     var buffering = false
@@ -66,28 +66,28 @@ object XmlParser {
     }
   }
 
-  private fun cdata(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): ParseEvent {
+  private fun cdata(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): SimpleXmlParseEvent {
     return CData(parser.text)
   }
 
-  private fun space(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): ParseEvent {
+  private fun space(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): SimpleXmlParseEvent {
     return Space(parser.text)
   }
 
-  private fun comment(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): ParseEvent {
+  private fun comment(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): SimpleXmlParseEvent {
     return Comment(parser.text)
   }
 
-  private fun characters(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): ParseEvent {
+  private fun characters(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): SimpleXmlParseEvent {
     return Characters(parser.text)
   }
 
-  private fun processingInstruction(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): ParseEvent {
+  private fun processingInstruction(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): SimpleXmlParseEvent {
     return ProcessingInstruction(parser.piTarget, parser.piData)
   }
 
 
-  private fun endDocument(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): ParseEvent {
+  private fun endDocument(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): SimpleXmlParseEvent {
     parser.close()
     return EndDocument
   }

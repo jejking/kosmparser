@@ -3,6 +3,7 @@ package com.jejking.kosmparser.osm
 import com.jejking.kosmparser.xml.EndElement
 import com.jejking.kosmparser.xml.StartDocument
 import com.jejking.kosmparser.xml.StartElement
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.test.TestCase
 import io.kotest.matchers.shouldBe
@@ -36,15 +37,24 @@ class OsmParserStateTest : FunSpec() {
         }
 
         test("should throw exception if cannot find version attribute in osm start element") {
-
+          val osmStartElement = StartElement("osm", mapOf("generator" to "manual"))
+          shouldThrow<IllegalStateException> {
+            readingOsmMetadata.accept(osmStartElement)
+          }
         }
 
         test("should throw exception if cannot find generator attribute in osm start element") {
-
+          val osmStartElement = StartElement("osm", mapOf("version" to "0.6"))
+          shouldThrow<IllegalStateException> {
+            readingOsmMetadata.accept(osmStartElement)
+          }
         }
 
         test("should throw exception if first element is not osm") {
-
+          val startElement = StartElement("foo")
+          shouldThrow<IllegalStateException> {
+            readingOsmMetadata.accept(startElement)
+          }
         }
       }
 

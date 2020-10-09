@@ -1,11 +1,11 @@
 package com.jejking.kosmparser.osm
 
 import com.jejking.kosmparser.io.asFlow
-import com.jejking.kosmparser.osm.OsmFlow.toOsmDataFlow
+import com.jejking.kosmparser.osm.OsmFlowMapper.toOsmDataFlow
 import com.jejking.kosmparser.util.getPath
 import com.jejking.kosmparser.util.openFileChannel
-import com.jejking.kosmparser.xml.ParseEvent
-import com.jejking.kosmparser.xml.XmlParser.toParseEvents
+import com.jejking.kosmparser.xml.SimpleXmlParseEvent
+import com.jejking.kosmparser.xml.XmlFlowMapper.toParseEvents
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
 @ExperimentalCoroutinesApi
-class OsmFlowTest : FunSpec() {
+class OsmFlowMapperTest : FunSpec() {
 
   init {
     context("correct osm xml") {
@@ -31,7 +31,7 @@ class OsmFlowTest : FunSpec() {
     }
   }
 
-  fun xmlParseEvents(path: String): Flow<ParseEvent> {
+  fun xmlParseEvents(path: String): Flow<SimpleXmlParseEvent> {
     val testFilePath = getPath(path)
     val fileChannel = autoClose(openFileChannel(testFilePath))
 
