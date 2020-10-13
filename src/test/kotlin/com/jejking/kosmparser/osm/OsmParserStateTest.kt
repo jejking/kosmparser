@@ -15,7 +15,7 @@ class OsmParserStateTest : FunSpec() {
 
   override fun beforeTest(testCase: TestCase) {
     super.beforeTest(testCase)
-    this.readingOsmMetadata = ReadingOsmMetadata()
+    this.readingOsmMetadata = ReadingOsmMetadata
   }
 
   init {
@@ -59,7 +59,7 @@ class OsmParserStateTest : FunSpec() {
       }
 
       context("bounds") {
-        test("should consume bounds start element").config(enabled = false) {
+        test("should consume bounds start element") {
           val boundsStartElement = StartElement("bounds",
             mapOf(
               "minlat" to "53.5646",

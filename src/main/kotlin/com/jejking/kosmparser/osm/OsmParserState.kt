@@ -35,11 +35,7 @@ sealed class ParserState {
 }
 
 
-class ReadingOsmMetadata : ParserState() {
-
-  private var seenOsmElement = false
-  private var apiVersion = ""
-  private var generator = ""
+object ReadingOsmMetadata : ParserState() {
 
   override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
@@ -60,18 +56,53 @@ class ReadingOsmMetadata : ParserState() {
   private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
     return when (startElement.localName) {
       "osm" -> readOsmElement(startElement)
-      else -> throw IllegalStateException()
+      else -> throw IllegalStateException("Got unexpected start element ${startElement.localName}")
     }
   }
 
   private fun readOsmElement(osmElement: StartElement): Pair<ParserState, OsmData?> {
-    this.apiVersion = osmElement.attributes.getOrThrow("version")
-    this.generator = osmElement.attributes.getOrThrow("generator")
-    this.seenOsmElement = true
-    return this to null
+    val apiVersion = osmElement.attributes.getOrThrow("version")
+    val generator = osmElement.attributes.getOrThrow("generator")
+    return ReadingBounds(apiVersion, generator) to null
   }
 }
 
+class ReadingBounds(private val apiVersion: String, private val generator: String): ParserState() {
+  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+    return when (xmlparseEventSimpleXml) {
+      is StartElement -> readStartElement(xmlparseEventSimpleXml)
+      is EndElement -> readEndElement(xmlparseEventSimpleXml)
+      else -> throw IllegalStateException()
+    }
+  }
+
+  private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
+    return ReadingNodes() to null
+  }
+
+  private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
+    return when (startElement.localName) {
+      "bounds" -> readBoundsElement(startElement)
+      else -> throw IllegalStateException("Got unexpected start element ${startElement.localName}")
+    }
+  }
+
+  private fun readBoundsElement(boundsElement: StartElement): Pair<ParserState, OsmData?> {
+    val maxlat = boundsElement.attributes.getOrThrow("maxlat")
+    val maxlon = boundsElement.attributes.getOrThrow("maxlon")
+    val minlat = boundsElement.attributes.getOrThrow("minlat")
+    val minlon = boundsElement.attributes.getOrThrow("minlon")
+    val bounds = toBounds(maxlat, maxlon, minlat, minlon)
+    return this to OsmMetadata(apiVersion, generator, bounds)
+  }
+
+  private fun toBounds(maxlat: String, maxlon: String, minlat: String, minlon: String): Bounds {
+    val minPoint = Point(minlat.toDouble(), minlon.toDouble())
+    val maxPoint = Point(maxlat.toDouble(), maxlon.toDouble())
+    return Bounds(minPoint, maxPoint)
+  }
+
+}
 
 class ReadingTags : ParserState() {
   override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
