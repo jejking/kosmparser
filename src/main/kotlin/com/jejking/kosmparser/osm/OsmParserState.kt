@@ -61,13 +61,13 @@ object ReadingOsmMetadata : ParserState() {
   }
 
   private fun readOsmElement(osmElement: StartElement): Pair<ParserState, OsmData?> {
-    val apiVersion = osmElement.attributes.getOrThrow("version")
-    val generator = osmElement.attributes.getOrThrow("generator")
+    val apiVersion = osmElement.attributes["version"]
+    val generator = osmElement.attributes["generator"]
     return ReadingBounds(apiVersion, generator) to null
   }
 }
 
-class ReadingBounds(private val apiVersion: String, private val generator: String): ParserState() {
+class ReadingBounds(val apiVersion: String?, val generator: String?): ParserState() {
   override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
