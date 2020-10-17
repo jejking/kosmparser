@@ -7,15 +7,15 @@
     <tag k="foo" v="bar"/>
     <tag k="wibble" v="wobble"/>
   </node>
+  <way changeset="321" id="3" timestamp="2013-05-14T14:12:39Z" uid="21" user="bar" version="1">
+    <nd ref="1"/>
+    <nd ref="2"/>
+    <tag k="highway" v="motorway"/>
+  </way>
   <relation id="4">
     <member ref="1" type="node"/>
     <member ref="3" role="" type="way"/>
     <member ref="666" role="dark-satanic" type="relation"/>
     <tag k="route" v="secret"/>
   </relation>
-  <way changeset="321" id="3" timestamp="2013-05-14T14:12:39Z" uid="21" user="bar" version="1">
-    <nd ref="1"/>
-    <nd ref="2"/>
-    <tag k="highway" v="motorway"/>
-  </way>
 </osm>

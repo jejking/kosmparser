@@ -4,6 +4,12 @@ import com.jejking.kosmparser.xml.EndElement
 import com.jejking.kosmparser.xml.SimpleXmlParseEvent
 import com.jejking.kosmparser.xml.StartDocument
 import com.jejking.kosmparser.xml.StartElement
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter.ISO_INSTANT
+import java.time.temporal.TemporalQueries
 
 /**
  * States.
@@ -111,9 +117,35 @@ class ReadingTags : ParserState() {
 }
 
 class ReadingNodes : ParserState() {
+
+  private lateinit var elementMetadata: ElementMetadata
+  private lateinit var point: Point
+
   override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
-    TODO("Not yet implemented")
+    return when (xmlparseEventSimpleXml) {
+      is StartElement -> readStartElement(xmlparseEventSimpleXml)
+      is EndElement -> readEndElement(xmlparseEventSimpleXml)
+      else -> throw IllegalStateException()
+    }
   }
+
+  private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
+    return TODO()
+  }
+
+  private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
+    return when (startElement.localName) {
+      "node" -> readNodeElement(startElement)
+      else -> throw IllegalStateException("Got unexpected start element ${startElement.localName}")
+    }
+  }
+
+  private fun readNodeElement(startElement: StartElement): Pair<ParserState, OsmData?> {
+    // extract elementMetadata, point
+    return TODO()
+  }
+
+
 }
 
 class ReadingWays : ParserState() {
@@ -132,6 +164,21 @@ class Finished : ParserState() {
   override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     TODO("Not yet implemented")
   }
+}
+
+fun readElementMetadata(startElement: StartElement): ElementMetadata {
+
+  val attributes = startElement.attributes
+  val id = attributes.getOrThrow("id").toLong()
+  val user = attributes["user"]
+  val uid = attributes.getOrThrow("uid").toLong()
+  val timestampString = attributes.getOrThrow("timestamp")
+  val timestamp = Instant.parse(timestampString).let { ZonedDateTime.ofInstant(it, ZoneOffset.UTC) }
+  val visible = attributes.getOrThrow("visible").toBoolean()
+  val version = attributes.getOrThrow("version").toLong()
+  val changeSet = attributes.getOrThrow("changeset").toLong()
+
+  return ElementMetadata(id = id, user = user, uid = uid, timestamp = timestamp, visible = visible, version = version, changeSet = changeSet)
 }
 
 fun Map<String, String>.getOrThrow(key: String): String = this[key] ?: throw IllegalStateException("Missing key $key")
