@@ -110,13 +110,55 @@ class ReadingBounds(val apiVersion: String?, val generator: String?): ParserStat
 
 }
 
-class ReadingTags : ParserState() {
+class ReadingTags(private val tagReceiver: TagReceiver) : ParserState() {
+
+  private val tagHolder = mutableMapOf<String, String>()
+
   override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
-    TODO("Not yet implemented")
+    return when (xmlparseEventSimpleXml) {
+      is StartElement -> readStartElement(xmlparseEventSimpleXml)
+      is EndElement -> readEndElement(xmlparseEventSimpleXml)
+      else -> throw IllegalStateException()
+    }
+  }
+
+  private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
+    return when (endElement.localName) {
+      "tag" -> this to null
+      else -> {
+        // supply tags back
+        tagReceiver.acceptTags(tagHolder.toMap())
+        // "pop" ourselves off and return control to the tag receiver
+        tagReceiver.accept(endElement)
+      }
+    }
+  }
+
+  private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
+    return when (startElement.localName) {
+      "tag" -> readTag(startElement)
+      else -> throw IllegalStateException("Got unexpected start element ${startElement.localName}")
+    }
+  }
+
+  private fun readTag(startElement: StartElement): Pair<ParserState, OsmData?> {
+    val key = startElement.attributes.getOrThrow("k")
+    val value = startElement.attributes.getOrThrow("v")
+    tagHolder[key] = value
+    return this to null
   }
 }
 
-class ReadingNodes : ParserState() {
+abstract class TagReceiver: ParserState() {
+
+  protected lateinit var tags: Map<String, String>
+
+  fun acceptTags(tags: Map<String, String>) {
+    this.tags = tags
+  }
+}
+
+class ReadingNodes : TagReceiver() {
 
   private lateinit var elementMetadata: ElementMetadata
   private lateinit var point: Point
@@ -130,7 +172,8 @@ class ReadingNodes : ParserState() {
   }
 
   private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
-    return TODO()
+    val node = Node(elementMetadata = elementMetadata, point = point, tags = tags)
+    return ReadingNodes() to node
   }
 
   private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
@@ -142,9 +185,12 @@ class ReadingNodes : ParserState() {
 
   private fun readNodeElement(startElement: StartElement): Pair<ParserState, OsmData?> {
     // extract elementMetadata, point
-    return TODO()
+    elementMetadata = readElementMetadata(startElement)
+    val lat = startElement.attributes.getOrThrow("lat").toDouble()
+    val lon = startElement.attributes.getOrThrow("lon").toDouble()
+    point = Point(lat = lat, lon = lon)
+    return (ReadingTags(this)) to null
   }
-
 
 }
 

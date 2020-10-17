@@ -1,6 +1,7 @@
 package com.jejking.kosmparser.osm
 
 import com.jejking.kosmparser.xml.EndElement
+import com.jejking.kosmparser.xml.SimpleXmlParseEvent
 import com.jejking.kosmparser.xml.StartDocument
 import com.jejking.kosmparser.xml.StartElement
 import io.kotest.assertions.throwables.shouldThrow
@@ -8,7 +9,9 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.data.forAll
 import io.kotest.data.row
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.matchers.types.shouldBeTypeOf
+import io.kotest.matchers.types.shouldNotBeSameInstanceAs
 import java.time.Month
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -148,13 +151,136 @@ class OsmParserStateTest : FunSpec() {
       }
     }
 
+    context("reading tags") {
+
+      class TestTagReceiver: TagReceiver() {
+        override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+          return this to null
+        }
+
+        fun getSuppliedTags() = this.tags
+      }
+
+      test("should read single tag") {
+        val startElement = StartElement("tag", mapOf("k" to "foo", "v" to "bar"))
+        val tagReceiver = TestTagReceiver()
+        val readingTags = ReadingTags(tagReceiver)
+
+        readingTags.accept(startElement)
+        readingTags.accept(EndElement("tag"))
+        val (parserState, osmData) = readingTags.accept(EndElement("node"))
+
+        parserState shouldBe tagReceiver
+        osmData shouldBe null
+        tagReceiver.getSuppliedTags() shouldBe mapOf("foo" to "bar")
+      }
+
+      test("should read multiple tags") {
+        val startElement1 = StartElement("tag", mapOf("k" to "foo", "v" to "bar"))
+        val startElement2 = StartElement("tag", mapOf("k" to "wibble", "v" to "wobble"))
+        val tagReceiver = TestTagReceiver()
+        val readingTags = ReadingTags(tagReceiver)
+
+        readingTags.accept(startElement1)
+        readingTags.accept(EndElement("tag"))
+
+        readingTags.accept(startElement2)
+        readingTags.accept(EndElement("tag"))
+        val (parserState, osmData) = readingTags.accept(EndElement("node"))
+
+        parserState shouldBe tagReceiver
+        osmData shouldBe null
+        tagReceiver.getSuppliedTags() shouldBe mapOf("foo" to "bar", "wibble" to "wobble")
+      }
+    }
+
     context("reading nodes") {
 
+      val standardElementMetadataAttrs = mapOf(
+        "id" to "123456",
+        "user" to "aUser",
+        "uid" to "987654321",
+        "timestamp" to "2014-05-14T14:12:29Z",
+        "visible" to "true",
+        "version" to "123",
+        "changeset" to "456789"
+      )
 
+      val expectedTimestamp = ZonedDateTime.of(2014, Month.MAY.value, 14, 14, 12, 29, 0, ZoneOffset.UTC)
+      val expectedElementMetadata = ElementMetadata(id = 123456, user = "aUser", uid = 987654321, timestamp = expectedTimestamp, visible = true, version = 123, changeSet = 456789)
+
+      test("node with no tags") {
+        val readingNodes = ReadingNodes()
+
+        val attrs = standardElementMetadataAttrs.toMutableMap()
+        attrs["lat"] = "54.23456"
+        attrs["lon"] = "11.5432"
+        val nodeStartElement = StartElement("node", attributes = attrs.toMap())
+
+        // read in node start element
+        val (parserState1, osmData1) = readingNodes.accept(nodeStartElement)
+
+        parserState1.shouldBeTypeOf<ReadingTags>()
+        osmData1 shouldBe null
+
+        // read end element - emit Node
+        val (parserState2, osmData2) = parserState1.accept(EndElement("node"))
+
+        parserState2.shouldBeTypeOf<ReadingNodes>()
+        parserState2 shouldNotBeSameInstanceAs readingNodes
+        val node = osmData2 as Node
+        node.elementMetadata shouldBe expectedElementMetadata
+        node.point shouldBe Point(lat = 54.23456, lon = 11.5432)
+        node.tags shouldBe emptyMap()
+      }
+
+      test("node with tags") {
+        val readingNodes = ReadingNodes()
+
+        val attrs = standardElementMetadataAttrs.toMutableMap()
+        attrs["lat"] = "54.23456"
+        attrs["lon"] = "11.5432"
+        val nodeStartElement = StartElement("node", attributes = attrs.toMap())
+
+        // read in node start element
+        val (parserState1, osmData1) = readingNodes.accept(nodeStartElement)
+
+        parserState1.shouldBeTypeOf<ReadingTags>()
+        osmData1 shouldBe null
+
+        // read in a tag
+        val tag = StartElement("tag", attributes = mapOf("k" to "key", "v" to "value"))
+        val (parserState2, osmData2) = parserState1.accept(tag)
+        parserState2 shouldBeSameInstanceAs parserState1
+        osmData2 shouldBe null
+
+        // end tag
+        val (parserState3, osmData3) = parserState2.accept(EndElement("tag"))
+        parserState3 shouldBeSameInstanceAs parserState2
+        osmData3 shouldBe null
+
+        // read end element - emit Node
+        val (parserState4, osmData4) = parserState3.accept(EndElement("node"))
+
+        parserState4.shouldBeTypeOf<ReadingNodes>()
+        parserState4 shouldNotBeSameInstanceAs readingNodes
+        val node = osmData4 as Node
+        node.elementMetadata shouldBe expectedElementMetadata
+        node.point shouldBe Point(lat = 54.23456, lon = 11.5432)
+        node.tags shouldBe mapOf("key" to "value")
+      }
+
+      test("sees a way element") {
+
+      }
+
+      test("sees a relation element") {
+
+      }
 
     }
 
-    context("reading element metadata") {
+    context("readElementMetadata function") {
 
       test("handles all fields if set correctly") {
         val startElement = StartElement("foo", mapOf(

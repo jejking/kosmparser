@@ -2,7 +2,7 @@
 <osm generator="manual" version="0.6">
   <bounds maxlat="53.5707" maxlon="10.0314" minlat="53.5646" minlon="10.0155"/>
   <node changeset="1" id="1" lat="53.12345" lon="10.2345" timestamp="2014-05-14T14:12:39Z"
-    uid="1" user="foo" version="1"/>
+  uid="1" user="foo" version="1"/>
   <node id="2" lat="54.23456" lon="11.5432">
     <tag k="foo" v="bar"/>
     <tag k="wibble" v="wobble"/>
