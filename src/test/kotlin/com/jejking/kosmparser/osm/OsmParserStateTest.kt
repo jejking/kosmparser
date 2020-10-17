@@ -1,9 +1,6 @@
 package com.jejking.kosmparser.osm
 
-import com.jejking.kosmparser.xml.EndElement
-import com.jejking.kosmparser.xml.SimpleXmlParseEvent
-import com.jejking.kosmparser.xml.StartDocument
-import com.jejking.kosmparser.xml.StartElement
+import com.jejking.kosmparser.xml.*
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.data.forAll
@@ -60,6 +57,11 @@ class OsmParserStateTest : FunSpec() {
         shouldThrow<IllegalStateException> {
           ReadingOsmMetadata.accept(startElement)
         }
+      }
+
+      test("should consumer end document") {
+        val (parserState, _) = ReadingOsmMetadata.accept(EndDocument)
+        parserState shouldBe Finished
       }
     }
 
@@ -271,11 +273,27 @@ class OsmParserStateTest : FunSpec() {
       }
 
       test("sees a way element") {
-
+        // if we see a way element, we move to ReadingWays
+        val way = StartElement("way")
+        val readingNodes = ReadingNodes()
+        val (parserState, _) = readingNodes.accept(way)
+        parserState.shouldBeTypeOf<ReadingWays>()
       }
 
       test("sees a relation element") {
+        // if we see a way element, we move to ReadingRelations
+        val relation = StartElement("relation")
+        val readingNodes = ReadingNodes()
+        val (parserState, _) = readingNodes.accept(relation)
+        parserState.shouldBeTypeOf<ReadingRelations>()
+      }
 
+      test("it sees the end of osm") {
+        // case where we have no ways or relations. Unlikely but feasible edge case
+        val endOsm = EndElement("osm")
+        val readingNodes = ReadingNodes()
+        val (parserState, _) = readingNodes.accept(endOsm)
+        parserState shouldBe ReadingOsmMetadata
       }
 
     }
