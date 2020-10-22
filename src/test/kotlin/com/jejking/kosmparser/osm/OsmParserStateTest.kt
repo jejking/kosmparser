@@ -59,7 +59,7 @@ class OsmParserStateTest : FunSpec() {
         }
       }
 
-      test("should consumer end document") {
+      test("should consume end document") {
         val (parserState, _) = ReadingOsmMetadata.accept(EndDocument)
         parserState shouldBe Finished
       }
@@ -296,6 +296,56 @@ class OsmParserStateTest : FunSpec() {
         parserState shouldBe ReadingOsmMetadata
       }
 
+    }
+
+    context("reading ways") {
+      test("should read in id and standard element metadata") {
+
+      }
+
+      test("should throw exception if missing expected id attribute") {
+
+      }
+
+      test("should read in two nd") {
+
+      }
+
+      test("should read in several nds") {
+
+      }
+
+      test("should throw exception if zero nds included") {
+
+      }
+
+      test("should throw exception if jst one nd included") {
+
+      }
+
+      test("should throw exception if more than 2000 nds included") {
+
+      }
+
+      test("should throw exception if nd missing expected ref attribute") {
+
+      }
+
+      test("should read in tags") {
+
+      }
+
+      test("sees another way element") {
+
+      }
+
+      test("sees a relation element") {
+
+      }
+
+      test("sees end of osm element") {
+
+      }
     }
 
     context("readElementMetadata function") {

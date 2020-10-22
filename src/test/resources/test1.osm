@@ -1,18 +1,19 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <osm generator="manual" version="0.6">
   <bounds maxlat="53.5707" maxlon="10.0314" minlat="53.5646" minlon="10.0155"/>
-  <node changeset="1" id="1" lat="53.12345" lon="10.2345" timestamp="2014-05-14T14:12:39Z"
+  <node id="1" lat="53.12345" lon="10.2345" changeset="1" timestamp="2014-05-14T14:12:39Z"
   uid="1" user="foo" version="1"/>
-  <node id="2" lat="54.23456" lon="11.5432">
+  <node id="2" lat="54.23456" lon="11.5432" changeset="1" timestamp="2014-05-14T14:12:39Z"
+    uid="1" user="foo" version="1">
     <tag k="foo" v="bar"/>
     <tag k="wibble" v="wobble"/>
   </node>
-  <way changeset="321" id="3" timestamp="2013-05-14T14:12:39Z" uid="21" user="bar" version="1">
+  <way id="3" changeset="1" timestamp="2014-05-14T14:12:39Z" uid="1" user="foo" version="1">
     <nd ref="1"/>
     <nd ref="2"/>
     <tag k="highway" v="motorway"/>
   </way>
-  <relation id="4">
+  <relation id="4" changeset="1" timestamp="2014-05-14T14:12:39Z" uid="1" user="foo" version="1">
     <member ref="1" type="node"/>
     <member ref="3" role="" type="way"/>
     <member ref="666" role="dark-satanic" type="relation"/>
