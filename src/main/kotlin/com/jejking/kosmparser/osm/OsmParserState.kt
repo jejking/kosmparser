@@ -2,11 +2,8 @@ package com.jejking.kosmparser.osm
 
 import com.jejking.kosmparser.xml.*
 import java.time.Instant
-import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter.ISO_INSTANT
-import java.time.temporal.TemporalQueries
 
 /**
  * States.
@@ -36,7 +33,6 @@ import java.time.temporal.TemporalQueries
 sealed class ParserState {
   abstract fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?>
 }
-
 
 object ReadingOsmMetadata : ParserState() {
 
@@ -71,17 +67,13 @@ object ReadingOsmMetadata : ParserState() {
   }
 }
 
-class ReadingBounds(val apiVersion: String?, val generator: String?): ParserState() {
+class ReadingBounds(val apiVersion: String?, val generator: String?) : ParserState() {
   override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
-      is EndElement -> readEndElement(xmlparseEventSimpleXml)
+      is EndElement -> ReadingNodes() to null
       else -> throw IllegalStateException()
     }
-  }
-
-  private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
-    return ReadingNodes() to null
   }
 
   private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
@@ -105,7 +97,6 @@ class ReadingBounds(val apiVersion: String?, val generator: String?): ParserStat
     val maxPoint = Point(maxlat.toDouble(), maxlon.toDouble())
     return Bounds(minPoint, maxPoint)
   }
-
 }
 
 class ReadingTags(private val tagReceiver: TagReceiver) : ParserState() {
@@ -147,9 +138,9 @@ class ReadingTags(private val tagReceiver: TagReceiver) : ParserState() {
   }
 }
 
-abstract class TagReceiver: ParserState() {
+abstract class TagReceiver : ParserState() {
 
-  protected lateinit var tags: Map<String, String>
+  protected var tags: Map<String, String> = mapOf()
 
   fun acceptTags(tags: Map<String, String>) {
     this.tags = tags
@@ -198,12 +189,99 @@ class ReadingNodes : TagReceiver() {
     point = Point(lat = lat, lon = lon)
     return (ReadingTags(this)) to null
   }
-
 }
 
-class ReadingWays : ParserState() {
+class ReadingNds(private val readingWays: ReadingWays) : ParserState() {
+
+  private val ndRefs = mutableListOf<Long>()
+
   override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
-    return this to null
+    return when (xmlparseEventSimpleXml) {
+      is StartElement -> readStartElement(xmlparseEventSimpleXml)
+      is EndElement -> readEndElement(xmlparseEventSimpleXml)
+      else -> throw IllegalStateException()
+    }
+  }
+
+  private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
+    return when (startElement.localName) {
+      "nd" -> readNdElement(startElement)
+      "tag" -> {
+        readingWays.acceptNdRefs(this.ndRefs.toList())
+        ReadingTags(readingWays).let { it.accept(startElement) }
+      }
+      else -> return readingWays.accept(startElement)
+    }
+  }
+
+  private fun readNdElement(startElement: StartElement): Pair<ParserState, OsmData?> {
+    try {
+      val ndRef = startElement.attributes.getOrThrow("ref").toLong()
+      ndRefs.add(ndRef)
+      return this to null
+    } catch (nfe: NumberFormatException) {
+      throw IllegalStateException(nfe)
+    }
+  }
+
+  private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
+    return when (endElement.localName) {
+      "nd" -> this to null
+      "way" -> {
+        readingWays.acceptNdRefs(this.ndRefs.toList())
+        readingWays.accept(endElement)
+      }
+      else -> throw IllegalStateException()
+    }
+  }
+}
+
+class ReadingWays : TagReceiver() {
+
+  private lateinit var elementMetadata: ElementMetadata
+  private lateinit var ndRefs: List<Long>
+
+  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+    return when (xmlparseEventSimpleXml) {
+      is StartElement -> readStartElement(xmlparseEventSimpleXml)
+      is EndElement -> readEndElement(xmlparseEventSimpleXml)
+      else -> throw IllegalStateException()
+    }
+  }
+
+  internal fun acceptNdRefs(ndRefs: List<Long>) {
+    this.ndRefs = ndRefs
+  }
+
+  private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
+    return when (endElement.localName) {
+      "way" -> {
+        val way = Way(elementMetadata, tags, ndRefs)
+        return ReadingWays() to way
+      }
+      // could theoretically come if we have no relation elements
+      "osm" -> ReadingOsmMetadata.accept(endElement)
+      else -> throw IllegalStateException("Got unexpected end element ${endElement.localName}")
+    }
+  }
+
+  private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
+    return when (startElement.localName) {
+      "way" -> readWayElement(startElement)
+      "relation" -> ReadingRelations().let { it.accept(startElement) }
+      else -> throw IllegalStateException("Got unexpected start element ${startElement.localName}")
+    }
+  }
+
+  private fun readWayElement(startElement: StartElement): Pair<ParserState, OsmData?> {
+    elementMetadata = readElementMetadata(startElement)
+    return (ReadingNds(this)) to null
+  }
+}
+
+class ReadingMembers : ParserState() {
+  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+    TODO("Not yet implemented")
   }
 }
 

@@ -68,11 +68,15 @@ class OsmParserStateTest : FunSpec() {
     context("bounds") {
       test("should consume bounds start element and return OsmMetadata") {
         val readingBounds = ReadingBounds(apiVersion = "6", generator = "manual")
-        val boundsStartElement = StartElement("bounds", mapOf(
-          "maxlat" to "53.5707",
-          "minlat" to "53.5646",
-          "maxlon" to "10.0314",
-          "minlon" to "10.0155"))
+        val boundsStartElement = StartElement(
+          "bounds",
+          mapOf(
+            "maxlat" to "53.5707",
+            "minlat" to "53.5646",
+            "maxlon" to "10.0314",
+            "minlon" to "10.0155"
+          )
+        )
 
         val (parserState, osmdata) = readingBounds.accept(boundsStartElement)
 
@@ -93,10 +97,14 @@ class OsmParserStateTest : FunSpec() {
 
       test("should throw exception if bounds missing expected minlat attribute") {
         val readingBounds = ReadingBounds(apiVersion = "6", generator = "manual")
-        val boundsStartElement = StartElement("bounds", mapOf(
-          "maxlat" to "53.5707",
-          "maxlon" to "10.0314",
-          "minlon" to "10.0155"))
+        val boundsStartElement = StartElement(
+          "bounds",
+          mapOf(
+            "maxlat" to "53.5707",
+            "maxlon" to "10.0314",
+            "minlon" to "10.0155"
+          )
+        )
 
         shouldThrow<IllegalStateException> {
           readingBounds.accept(boundsStartElement)
@@ -105,10 +113,14 @@ class OsmParserStateTest : FunSpec() {
 
       test("should throw exception if bounds missing expected minlon attribute") {
         val readingBounds = ReadingBounds(apiVersion = "6", generator = "manual")
-        val boundsStartElement = StartElement("bounds", mapOf(
-          "maxlat" to "53.5707",
-          "minlat" to "53.5646",
-          "maxlon" to "10.0314"))
+        val boundsStartElement = StartElement(
+          "bounds",
+          mapOf(
+            "maxlat" to "53.5707",
+            "minlat" to "53.5646",
+            "maxlon" to "10.0314"
+          )
+        )
 
         shouldThrow<IllegalStateException> {
           readingBounds.accept(boundsStartElement)
@@ -117,10 +129,14 @@ class OsmParserStateTest : FunSpec() {
 
       test("should throw exception if bounds missing expected maxlat attribute") {
         val readingBounds = ReadingBounds(apiVersion = "6", generator = "manual")
-        val boundsStartElement = StartElement("bounds", mapOf(
-          "minlat" to "53.5646",
-          "maxlon" to "10.0314",
-          "minlon" to "10.0155"))
+        val boundsStartElement = StartElement(
+          "bounds",
+          mapOf(
+            "minlat" to "53.5646",
+            "maxlon" to "10.0314",
+            "minlon" to "10.0155"
+          )
+        )
 
         shouldThrow<IllegalStateException> {
           readingBounds.accept(boundsStartElement)
@@ -129,10 +145,14 @@ class OsmParserStateTest : FunSpec() {
 
       test("should throw exception if bounds missing expected maxlon attribute") {
         val readingBounds = ReadingBounds(apiVersion = "6", generator = "manual")
-        val boundsStartElement = StartElement("bounds", mapOf(
-          "maxlat" to "53.5707",
-          "minlat" to "53.5646",
-          "minlon" to "10.0155"))
+        val boundsStartElement = StartElement(
+          "bounds",
+          mapOf(
+            "maxlat" to "53.5707",
+            "minlat" to "53.5646",
+            "minlon" to "10.0155"
+          )
+        )
 
         shouldThrow<IllegalStateException> {
           readingBounds.accept(boundsStartElement)
@@ -141,11 +161,15 @@ class OsmParserStateTest : FunSpec() {
 
       test("should rethrow exception if bounds semantically wrong") {
         val readingBounds = ReadingBounds(apiVersion = "6", generator = "manual")
-        val boundsStartElement = StartElement("bounds", mapOf(
-          "maxlat" to "92.5707",
-          "minlat" to "53.5646",
-          "maxlon" to "10.0314",
-          "minlon" to "10.0155"))
+        val boundsStartElement = StartElement(
+          "bounds",
+          mapOf(
+            "maxlat" to "92.5707",
+            "minlat" to "53.5646",
+            "maxlon" to "10.0314",
+            "minlon" to "10.0155"
+          )
+        )
 
         shouldThrow<IllegalStateException> {
           readingBounds.accept(boundsStartElement)
@@ -155,7 +179,7 @@ class OsmParserStateTest : FunSpec() {
 
     context("reading tags") {
 
-      class TestTagReceiver: TagReceiver() {
+      class TestTagReceiver : TagReceiver() {
         override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
           return this to null
         }
@@ -274,10 +298,10 @@ class OsmParserStateTest : FunSpec() {
 
       test("sees a way element") {
         // if we see a way element, we move to ReadingWays
-        val way = StartElement("way")
+        val way = StartElement("way", standardElementMetadataAttrs)
         val readingNodes = ReadingNodes()
         val (parserState, _) = readingNodes.accept(way)
-        parserState.shouldBeTypeOf<ReadingWays>()
+        parserState.shouldBeTypeOf<ReadingNds>() // goes straight through....
       }
 
       test("sees a relation element") {
@@ -295,71 +319,223 @@ class OsmParserStateTest : FunSpec() {
         val (parserState, _) = readingNodes.accept(endOsm)
         parserState shouldBe ReadingOsmMetadata
       }
-
     }
 
     context("reading ways") {
-      test("should read in id and standard element metadata") {
 
+      val standardElementMetadataAttrs = mapOf(
+        "id" to "123456",
+        "user" to "aUser",
+        "uid" to "987654321",
+        "timestamp" to "2014-05-14T14:12:29Z",
+        "visible" to "true",
+        "version" to "123",
+        "changeset" to "456789"
+      )
+
+      test("should read in id and other standard element metadata") {
+        val startElement = StartElement("way", standardElementMetadataAttrs)
+        val readingWays = ReadingWays()
+        val (parserState, osmData) = readingWays.accept(startElement)
+        parserState.shouldBeTypeOf<ReadingNds>()
+        osmData shouldBe null
       }
 
       test("should throw exception if missing expected id attribute") {
 
-      }
-
-      test("should read in two nd") {
-
-      }
-
-      test("should read in several nds") {
-
-      }
-
-      test("should throw exception if zero nds included") {
-
-      }
-
-      test("should throw exception if jst one nd included") {
-
-      }
-
-      test("should throw exception if more than 2000 nds included") {
-
-      }
-
-      test("should throw exception if nd missing expected ref attribute") {
-
-      }
-
-      test("should read in tags") {
-
-      }
-
-      test("sees another way element") {
-
-      }
-
-      test("sees a relation element") {
-
-      }
-
-      test("sees end of osm element") {
-
-      }
-    }
-
-    context("readElementMetadata function") {
-
-      test("handles all fields if set correctly") {
-        val startElement = StartElement("foo", mapOf(
-          "id" to "123456",
+        val attrs = mapOf(
           "user" to "aUser",
           "uid" to "987654321",
           "timestamp" to "2014-05-14T14:12:29Z",
           "visible" to "true",
           "version" to "123",
           "changeset" to "456789"
-        ))
+        )
+
+        val startElement = StartElement("way", attrs)
+        val readingWays = ReadingWays()
+        shouldThrow<IllegalStateException> {
+          readingWays.accept(startElement)
+        }
+      }
+
+      context("reading nds") {
+        test("should read in one nd") {
+          val startElement = StartElement("nd", attributes = mapOf("ref" to "12345"))
+          val readingNds = ReadingNds(ReadingWays())
+
+          val (parserState1, _) = readingNds.accept(startElement)
+          parserState1 shouldBeSameInstanceAs readingNds
+
+          val (parserState2, _) = readingNds.accept(EndElement("nd"))
+          parserState2 shouldBeSameInstanceAs readingNds
+        }
+
+        test("should read in several nds") {
+          val startElement = StartElement("nd", attributes = mapOf("ref" to "12345"))
+          val readingNds = ReadingNds(ReadingWays())
+
+          val (parserState1, _) = readingNds.accept(startElement)
+          parserState1 shouldBeSameInstanceAs readingNds
+
+          val (parserState2, _) = parserState1.accept(EndElement("nd"))
+          parserState2 shouldBeSameInstanceAs readingNds
+
+          val startElement2 = StartElement("nd", attributes = mapOf("ref" to "12345"))
+          val (parserState3, _) = parserState2.accept(startElement2)
+          parserState3 shouldBeSameInstanceAs readingNds
+        }
+
+        test("sees a tag element") {
+          // should return back to  reading ways
+          val readingWays = ReadingWays()
+          val readingNds = ReadingNds(readingWays)
+
+          val tag = StartElement("tag", mapOf("k" to "key", "v" to "value"))
+
+          val (parserState, _) = readingNds.accept(tag)
+          parserState.shouldBeTypeOf<ReadingTags>()
+        }
+
+        // untagged ways are conceivable
+        test("sees an end of way element") {
+          // hand back to reading ways
+          val readingWays = ReadingWays()
+          readingWays.accept(StartElement("way", standardElementMetadataAttrs))
+          val readingNds = ReadingNds(readingWays)
+
+          val endWay = EndElement("way")
+
+          val (parserState, _) = readingNds.accept(endWay)
+          parserState shouldNotBeSameInstanceAs readingWays
+          parserState.shouldBeTypeOf<ReadingWays>()
+        }
+
+        test("should throw exception if nd missing expected ref attribute") {
+          val nd = StartElement("nd") // no attributes
+          val readingNds = ReadingNds(ReadingWays())
+
+          shouldThrow<IllegalStateException> {
+            readingNds.accept(nd)
+          }
+        }
+
+        test("should throw exception if ref cannot be parsed to Long") {
+          val nd = StartElement("nd", mapOf("ref" to "123.45")) // ref not a LONG
+          val readingNds = ReadingNds(ReadingWays())
+
+          shouldThrow<IllegalStateException> {
+            readingNds.accept(nd)
+          }
+        }
+      }
+
+      /*
+       Tests for number of ND elements not needed at parser level as we deal with
+       that in the domain object.
+       */
+      test("should emit fully formed way element on endElement") {
+        // including nds & tags
+        val startWay = StartElement("way", standardElementMetadataAttrs)
+        val nd1 = StartElement("nd", mapOf("ref" to "12"))
+        val nd2 = StartElement("nd", mapOf("ref" to "34"))
+
+        val fooTag = StartElement("tag", mapOf("k" to "foo", "v" to "bar"))
+        val wibbleTag = StartElement("tag", mapOf("k" to "wibble", "v" to "wobble"))
+
+        var parserState: ParserState = ReadingWays()
+        parserState = parserState.accept(startWay).first
+        parserState = parserState.accept(nd1).first
+        parserState = parserState.accept(EndElement("nd")).first
+        parserState = parserState.accept(nd2).first
+        parserState = parserState.accept(EndElement("nd")).first
+        parserState = parserState.accept(fooTag).first
+        parserState = parserState.accept(EndElement("tag")).first
+        parserState = parserState.accept(wibbleTag).first
+        parserState = parserState.accept(EndElement("tag")).first
+        val (endParserState, osmData) = parserState.accept(EndElement("way"))
+
+        endParserState.shouldBeTypeOf<ReadingWays>()
+        val way = osmData as Way
+        way.nds shouldBe listOf(12, 34)
+        way.tags shouldBe mapOf("foo" to "bar", "wibble" to "wobble")
+        way.elementMetadata shouldBe readElementMetadata(startWay)
+      }
+
+      test("should handle edge case with no nds") {
+        val startWay = StartElement("way", standardElementMetadataAttrs)
+
+        val fooTag = StartElement("tag", mapOf("k" to "foo", "v" to "bar"))
+        val wibbleTag = StartElement("tag", mapOf("k" to "wibble", "v" to "wobble"))
+
+        var parserState: ParserState = ReadingWays()
+        parserState = parserState.accept(startWay).first
+        parserState = parserState.accept(fooTag).first
+        parserState = parserState.accept(EndElement("tag")).first
+        parserState = parserState.accept(wibbleTag).first
+        parserState = parserState.accept(EndElement("tag")).first
+        val (endParserState, osmData) = parserState.accept(EndElement("way"))
+
+        endParserState.shouldBeTypeOf<ReadingWays>()
+        val way = osmData as Way
+        way.nds shouldBe listOf()
+        way.tags shouldBe mapOf("foo" to "bar", "wibble" to "wobble")
+        way.elementMetadata shouldBe readElementMetadata(startWay)
+      }
+
+      test("should handle case with no tags") {
+        val startWay = StartElement("way", standardElementMetadataAttrs)
+        val nd1 = StartElement("nd", mapOf("ref" to "12"))
+        val nd2 = StartElement("nd", mapOf("ref" to "34"))
+
+        var parserState: ParserState = ReadingWays()
+        parserState = parserState.accept(startWay).first
+        parserState = parserState.accept(nd1).first
+        parserState = parserState.accept(EndElement("nd")).first
+        parserState = parserState.accept(nd2).first
+        parserState = parserState.accept(EndElement("nd")).first
+
+        val (endParserState, osmData) = parserState.accept(EndElement("way"))
+
+        endParserState.shouldBeTypeOf<ReadingWays>()
+        val way = osmData as Way
+        way.nds shouldBe listOf(12, 34)
+        way.tags shouldBe mapOf()
+        way.elementMetadata shouldBe readElementMetadata(startWay)
+      }
+
+      test("sees a relation element") {
+        val relation = StartElement("relation", standardElementMetadataAttrs)
+        val readingWays = ReadingWays()
+
+        val (parserState, _) = readingWays.accept(relation)
+        parserState.shouldBeTypeOf<ReadingRelations>()
+      }
+
+      test("sees end of osm element") {
+        val readingWays = ReadingWays()
+        val endElement = EndElement("osm")
+
+        val (parserState, _) = readingWays.accept(endElement)
+        parserState shouldBe ReadingOsmMetadata
+      }
+    }
+
+    context("readElementMetadata function") {
+
+      test("handles all fields if set correctly") {
+        val startElement = StartElement(
+          "foo",
+          mapOf(
+            "id" to "123456",
+            "user" to "aUser",
+            "uid" to "987654321",
+            "timestamp" to "2014-05-14T14:12:29Z",
+            "visible" to "true",
+            "version" to "123",
+            "changeset" to "456789"
+          )
+        )
 
         val expectedTimestamp = ZonedDateTime.of(2014, Month.MAY.value, 14, 14, 12, 29, 0, ZoneOffset.UTC)
         val expected = ElementMetadata(id = 123456, user = "aUser", uid = 987654321, timestamp = expectedTimestamp, visible = true, version = 123, changeSet = 456789)
@@ -368,14 +544,17 @@ class OsmParserStateTest : FunSpec() {
       }
 
       test("handles missing user field") {
-        val startElement = StartElement("foo", mapOf(
-          "id" to "123456",
-          "uid" to "987654321",
-          "timestamp" to "2014-05-14T14:12:29Z",
-          "visible" to "true",
-          "version" to "123",
-          "changeset" to "456789"
-        ))
+        val startElement = StartElement(
+          "foo",
+          mapOf(
+            "id" to "123456",
+            "uid" to "987654321",
+            "timestamp" to "2014-05-14T14:12:29Z",
+            "visible" to "true",
+            "version" to "123",
+            "changeset" to "456789"
+          )
+        )
 
         val expectedTimestamp = ZonedDateTime.of(2014, Month.MAY.value, 14, 14, 12, 29, 0, ZoneOffset.UTC)
         val expected = ElementMetadata(id = 123456, user = null, uid = 987654321, timestamp = expectedTimestamp, visible = true, version = 123, changeSet = 456789)
@@ -446,7 +625,6 @@ class OsmParserStateTest : FunSpec() {
           }
         }
       }
-
     }
   }
 }
