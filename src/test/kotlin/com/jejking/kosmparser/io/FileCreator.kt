@@ -38,16 +38,19 @@ object FileCreator {
   private suspend fun writeBuffer(offset: Int, byteBuffer: ByteBuffer, channel: AsynchronousFileChannel) {
     byteBuffer.flip()
     suspendCoroutine<Int> { cont ->
-      channel.write(byteBuffer, offset.toLong(), Unit, object : CompletionHandler<Int, Unit> {
-        override fun completed(bytesRead: Int, attachment: Unit) {
-          byteBuffer.flip()
-          cont.resume(bytesRead)
-        }
+      channel.write(
+        byteBuffer, offset.toLong(), Unit,
+        object : CompletionHandler<Int, Unit> {
+          override fun completed(bytesRead: Int, attachment: Unit) {
+            byteBuffer.flip()
+            cont.resume(bytesRead)
+          }
 
-        override fun failed(exception: Throwable, attachment: Unit) {
-          cont.resumeWithException(exception)
+          override fun failed(exception: Throwable, attachment: Unit) {
+            cont.resumeWithException(exception)
+          }
         }
-      })
+      )
     }
   }
 

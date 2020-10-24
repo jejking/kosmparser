@@ -17,10 +17,13 @@ class OsmTypesTest : FunSpec() {
   init {
     context("point") {
       test("should accept lat values between -90 and 90 and long between -180 and 180") {
-        val pointArb: Arb<Point> = arb(edgecases = listOf(Point(0.0, 0.0), Point(-90.0, -180.0), Point(90.0, 180.0))) { rs ->
+        val pointArb: Arb<Point> = arb(edgecases = listOf(Point(0.0, 0.0), Point(-90.0, -180.0), Point(90.0, 180.0))) {
+          rs ->
           val latitudes = Arb.numericDoubles(-90.0, 90.0).values(rs)
           val longitudes = Arb.numericDoubles(-180.0, 180.0).values(rs)
-          latitudes.zip(longitudes).map { (latitude, longitude) -> Point(latitude.value, longitude.value) }
+          latitudes.zip(longitudes).map { (latitude, longitude) ->
+            Point(latitude.value, longitude.value)
+          }
         }
 
         forAll(pointArb) { p: Point -> LAT_RANGE.contains(p.lat) && LON_RANGE.contains(p.lon) }
@@ -102,5 +105,4 @@ class OsmTypesTest : FunSpec() {
       }
     }
   }
-
 }

@@ -1,6 +1,10 @@
 package com.jejking.kosmparser.osm
 
-import com.jejking.kosmparser.xml.*
+import com.jejking.kosmparser.xml.EndDocument
+import com.jejking.kosmparser.xml.EndElement
+import com.jejking.kosmparser.xml.SimpleXmlParseEvent
+import com.jejking.kosmparser.xml.StartDocument
+import com.jejking.kosmparser.xml.StartElement
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -309,7 +313,15 @@ fun readElementMetadata(startElement: StartElement): ElementMetadata {
   val version = attributes.getOrThrow("version").toLong()
   val changeSet = attributes.getOrThrow("changeset").toLong()
 
-  return ElementMetadata(id = id, user = user, uid = uid, timestamp = timestamp, visible = visible, version = version, changeSet = changeSet)
+  return ElementMetadata(
+    id = id,
+    user = user,
+    uid = uid,
+    timestamp = timestamp,
+    visible = visible,
+    version = version,
+    changeSet = changeSet
+  )
 }
 
 fun Map<String, String>.getOrThrow(key: String): String = this[key] ?: throw IllegalStateException("Missing key $key")

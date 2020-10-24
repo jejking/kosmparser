@@ -21,14 +21,14 @@ class URIFlowTest : StringSpec() {
 
   private val port = 8888
   private val host = "localhost"
-  private val baseUri = "http://${host}:${port}"
+  private val baseUri = "http://$host:$port"
 
   private lateinit var wireMockServer: WireMockServer
   private lateinit var wiremock: WireMock
 
   private val httpClient = HttpClient.newBuilder()
     .version(HttpClient.Version.HTTP_2)
-    .build();
+    .build()
 
   override fun beforeSpec(spec: Spec) {
     super.beforeSpec(spec)
@@ -51,13 +51,16 @@ class URIFlowTest : StringSpec() {
     "should GET content of an HTTP URI and expose response as flow of byte array" {
 
       val response = """{"success":true"}"""
-      wiremock.register(WireMock.get("/info")
-        .willReturn(WireMock.aResponse()
-          .withStatus(200)
-          .withBody(response)
-          .withHeader("Content-Type", "application/json"))
+      wiremock.register(
+        WireMock.get("/info")
+          .willReturn(
+            WireMock.aResponse()
+              .withStatus(200)
+              .withBody(response)
+              .withHeader("Content-Type", "application/json")
+          )
       )
-      val uri = URI.create("${baseUri}/info")
+      val uri = URI.create("$baseUri/info")
 
       runBlocking {
         val actualResponse = uri.asFlow(httpClient)
@@ -70,13 +73,16 @@ class URIFlowTest : StringSpec() {
 
     "should throw exception if HTTP response is 4xx" {
       val response = """{"success":false"}"""
-      wiremock.register(WireMock.get("/400")
-        .willReturn(WireMock.aResponse()
-          .withStatus(404)
-          .withBody(response)
-          .withHeader("Content-Type", "application/json"))
+      wiremock.register(
+        WireMock.get("/400")
+          .willReturn(
+            WireMock.aResponse()
+              .withStatus(404)
+              .withBody(response)
+              .withHeader("Content-Type", "application/json")
+          )
       )
-      val flow = URI.create("${baseUri}/400").asFlow(httpClient)
+      val flow = URI.create("$baseUri/400").asFlow(httpClient)
       runBlocking {
         shouldThrow<IOException> {
           flow.collect({ })
@@ -85,10 +91,14 @@ class URIFlowTest : StringSpec() {
     }
 
     "should propagate any exceptions" {
-      wiremock.register(WireMock.get("/fault")
-        .willReturn(WireMock.aResponse()
-          .withFault(Fault.EMPTY_RESPONSE)))
-      val uri = URI.create("${baseUri}/fault")
+      wiremock.register(
+        WireMock.get("/fault")
+          .willReturn(
+            WireMock.aResponse()
+              .withFault(Fault.EMPTY_RESPONSE)
+          )
+      )
+      val uri = URI.create("$baseUri/fault")
 
       val flow = uri.asFlow(httpClient)
       runBlocking {
@@ -97,9 +107,11 @@ class URIFlowTest : StringSpec() {
     }
 
     "should throw exception if URI is not http or https" {
-      val uris = listOf("file:///tmp/file",
+      val uris = listOf(
+        "file:///tmp/file",
         "mailto:foo@bar.com",
-        "data:text/vnd-example+xyz;foo=bar;base64,R0lGODdh")
+        "data:text/vnd-example+xyz;foo=bar;base64,R0lGODdh"
+      )
         .map { URI.create(it) }
 
       uris.forEach {

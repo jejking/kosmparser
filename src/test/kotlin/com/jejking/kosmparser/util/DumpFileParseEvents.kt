@@ -16,7 +16,7 @@ object DumpFileParseEvents {
     xmlParseEvents()
   }
 
-  fun xmlParseEvents(): Unit {
+  fun xmlParseEvents() {
     val testFilePath = getPath("test1.osm")
     val fileChannel = openFileChannel(testFilePath)
 

@@ -33,7 +33,7 @@ object XmlFlowMapper {
           XMLStreamConstants.CHARACTERS -> emit(characters(parser))
           XMLStreamConstants.COMMENT -> emit(comment(parser))
           XMLStreamConstants.CDATA -> emit(cdata(parser))
-          else -> println("Got ${next}, cannot handle yet")
+          else -> println("Got $next, cannot handle yet")
         }
         next = parser.next()
       }
@@ -85,7 +85,6 @@ object XmlFlowMapper {
   private fun processingInstruction(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): SimpleXmlParseEvent {
     return ProcessingInstruction(parser.piTarget, parser.piData)
   }
-
 
   private fun endDocument(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): SimpleXmlParseEvent {
     parser.close()

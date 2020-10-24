@@ -22,15 +22,18 @@ import kotlin.coroutines.suspendCoroutine
  */
 suspend fun AsynchronousFileChannel.aRead(offset: Long, buf: ByteBuffer): Int =
   suspendCoroutine { cont ->
-    read(buf, offset, Unit, object : CompletionHandler<Int, Unit> {
-      override fun completed(bytesRead: Int, attachment: Unit) {
-        cont.resume(bytesRead)
-      }
+    read(
+      buf, offset, Unit,
+      object : CompletionHandler<Int, Unit> {
+        override fun completed(bytesRead: Int, attachment: Unit) {
+          cont.resume(bytesRead)
+        }
 
-      override fun failed(exception: Throwable, attachment: Unit) {
-        cont.resumeWithException(exception)
+        override fun failed(exception: Throwable, attachment: Unit) {
+          cont.resumeWithException(exception)
+        }
       }
-    })
+    )
   }
 
 /**

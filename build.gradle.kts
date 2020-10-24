@@ -8,84 +8,82 @@ val kotlinxCoRoutinesVersion = "1.3.9"
 val sourceCompatibility = JavaVersion.VERSION_11
 
 plugins {
-  val kotlinVersion = "1.4.10"
-  val ktlintVersion = "9.4.1"
-  val testLoggerVersion = "2.1.1"
-  val versionsVersion = "0.33.0"
-  val detektVersion = "1.14.2"
-  // Apply the Kotlin JVM plugin to add support for Kotlin.
-  id("org.jetbrains.kotlin.jvm") version kotlinVersion
-  id("org.jlleitschuh.gradle.ktlint") version ktlintVersion
-  id("com.adarshr.test-logger") version testLoggerVersion
-  id("com.github.ben-manes.versions") version versionsVersion
-  id("io.gitlab.arturbosch.detekt") version detektVersion
-  // Apply the java-library plugin for API and implementation separation.
-  `java-library`
+    val kotlinVersion = "1.4.10"
+    val ktlintVersion = "9.4.1"
+    val testLoggerVersion = "2.1.1"
+    val versionsVersion = "0.33.0"
+    val detektVersion = "1.14.2"
+    // Apply the Kotlin JVM plugin to add support for Kotlin.
+    id("org.jetbrains.kotlin.jvm") version kotlinVersion
+    id("org.jlleitschuh.gradle.ktlint") version ktlintVersion
+    id("com.adarshr.test-logger") version testLoggerVersion
+    id("com.github.ben-manes.versions") version versionsVersion
+    id("io.gitlab.arturbosch.detekt") version detektVersion
+    // Apply the java-library plugin for API and implementation separation.
+    `java-library`
 }
 
 repositories {
-  // Use jcenter for resolving dependencies.
-  // You can declare any Maven/Ivy/file repository here.
-  jcenter()
-  mavenCentral()
+    // Use jcenter for resolving dependencies.
+    // You can declare any Maven/Ivy/file repository here.
+    jcenter()
+    mavenCentral()
 }
 
 dependencies {
-  // Align versions of all Kotlin components
-  implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
+    // Align versions of all Kotlin components
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
 
-  // Use the Kotlin JDK 8 standard library.
-  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    // Use the Kotlin JDK 8 standard library.
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoRoutinesVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoRoutinesVersion")
 
-  implementation("org.reactivestreams:reactive-streams:1.0.3")
+    implementation("org.reactivestreams:reactive-streams:1.0.3")
 
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinxCoRoutinesVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinxCoRoutinesVersion")
 
-  implementation("com.fasterxml:aalto-xml:1.2.2")
+    implementation("com.fasterxml:aalto-xml:1.2.2")
 
-  testImplementation("io.kotest:kotest-runner-junit5-jvm:$koTestVersion")
-  testImplementation("io.kotest:kotest-assertions-core-jvm:$koTestVersion")
-  testImplementation("io.kotest:kotest-property-jvm:$koTestVersion")
+    testImplementation("io.kotest:kotest-runner-junit5-jvm:$koTestVersion")
+    testImplementation("io.kotest:kotest-assertions-core-jvm:$koTestVersion")
+    testImplementation("io.kotest:kotest-property-jvm:$koTestVersion")
 
-  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$kotlinxCoRoutinesVersion")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$kotlinxCoRoutinesVersion")
 
-  testImplementation("com.github.tomakehurst:wiremock-jre8:2.27.2")
+    testImplementation("com.github.tomakehurst:wiremock-jre8:2.27.2")
 }
 
 tasks {
-  withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions {
-      freeCompilerArgs = listOf("-Xjsr305=strict")
-      jvmTarget = sourceCompatibility
+    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        kotlinOptions {
+            freeCompilerArgs = listOf("-Xjsr305=strict")
+            jvmTarget = sourceCompatibility
+        }
     }
-  }
 
-  withType<Test> {
-    useJUnitPlatform()
-  }
+    withType<Test> {
+        useJUnitPlatform()
+    }
 }
 
-
-
 ktlint {
-  version.set("0.39.0")
+    version.set("0.39.0")
 }
 
 testlogger {
-  setTheme("mocha")
+    setTheme("mocha")
 }
 
 fun isNonStable(version: String): Boolean {
-  val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.toUpperCase().contains(it) }
-  val regex = "^[0-9,.v-]+(-r)?$".toRegex()
-  val isStable = stableKeyword || regex.matches(version)
-  return isStable.not()
+    val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.toUpperCase().contains(it) }
+    val regex = "^[0-9,.v-]+(-r)?$".toRegex()
+    val isStable = stableKeyword || regex.matches(version)
+    return isStable.not()
 }
 
 tasks.withType<DependencyUpdatesTask> {
-  rejectVersionIf {
-    isNonStable(candidate.version)
-  }
+    rejectVersionIf {
+        isNonStable(candidate.version)
+    }
 }

@@ -1,6 +1,10 @@
 package com.jejking.kosmparser.osm
 
-import com.jejking.kosmparser.xml.*
+import com.jejking.kosmparser.xml.EndDocument
+import com.jejking.kosmparser.xml.EndElement
+import com.jejking.kosmparser.xml.SimpleXmlParseEvent
+import com.jejking.kosmparser.xml.StartDocument
+import com.jejking.kosmparser.xml.StartElement
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.data.forAll
@@ -233,7 +237,15 @@ class OsmParserStateTest : FunSpec() {
       )
 
       val expectedTimestamp = ZonedDateTime.of(2014, Month.MAY.value, 14, 14, 12, 29, 0, ZoneOffset.UTC)
-      val expectedElementMetadata = ElementMetadata(id = 123456, user = "aUser", uid = 987654321, timestamp = expectedTimestamp, visible = true, version = 123, changeSet = 456789)
+      val expectedElementMetadata = ElementMetadata(
+        id = 123456,
+        user = "aUser",
+        uid = 987654321,
+        timestamp = expectedTimestamp,
+        visible = true,
+        version = 123,
+        changeSet = 456789
+      )
 
       test("node with no tags") {
         val readingNodes = ReadingNodes()
@@ -538,7 +550,15 @@ class OsmParserStateTest : FunSpec() {
         )
 
         val expectedTimestamp = ZonedDateTime.of(2014, Month.MAY.value, 14, 14, 12, 29, 0, ZoneOffset.UTC)
-        val expected = ElementMetadata(id = 123456, user = "aUser", uid = 987654321, timestamp = expectedTimestamp, visible = true, version = 123, changeSet = 456789)
+        val expected = ElementMetadata(
+          id = 123456,
+          user = "aUser",
+          uid = 987654321,
+          timestamp = expectedTimestamp,
+          visible = true,
+          version = 123,
+          changeSet = 456789
+        )
 
         readElementMetadata(startElement) shouldBe expected
       }
@@ -557,7 +577,15 @@ class OsmParserStateTest : FunSpec() {
         )
 
         val expectedTimestamp = ZonedDateTime.of(2014, Month.MAY.value, 14, 14, 12, 29, 0, ZoneOffset.UTC)
-        val expected = ElementMetadata(id = 123456, user = null, uid = 987654321, timestamp = expectedTimestamp, visible = true, version = 123, changeSet = 456789)
+        val expected = ElementMetadata(
+          id = 123456,
+          user = null,
+          uid = 987654321,
+          timestamp = expectedTimestamp,
+          visible = true,
+          version = 123,
+          changeSet = 456789
+        )
 
         readElementMetadata(startElement) shouldBe expected
       }

@@ -51,7 +51,6 @@ data class Characters(override val text: String) : TextEventSimpleXml()
  */
 data class Comment(val text: String) : SimpleXmlParseEvent()
 
-
 /**
  * Space (ignorable whitespace).
  *
@@ -64,9 +63,11 @@ data class Space(val text: String) : SimpleXmlParseEvent()
  *
  * @see [XMLStreamConstants.START_DOCUMENT]
  */
-data class StartDocument(val systemId: String,
-                         val characterEncodingScheme: String,
-                         val isStandalone: Boolean) : SimpleXmlParseEvent()
+data class StartDocument(
+  val systemId: String,
+  val characterEncodingScheme: String,
+  val isStandalone: Boolean
+) : SimpleXmlParseEvent()
 
 /**
  * End of document.
@@ -81,4 +82,3 @@ object EndDocument : SimpleXmlParseEvent()
  * @see [XMLStreamConstants.CDATA]
  */
 data class CData(override val text: String) : TextEventSimpleXml()
-

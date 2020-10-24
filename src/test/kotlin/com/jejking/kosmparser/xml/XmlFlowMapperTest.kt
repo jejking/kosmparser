@@ -30,7 +30,7 @@ class XmlFlowMapperTest : FunSpec() {
           """
                     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
                     <myxml/>
-                """.trimIndent()
+          """.trimIndent()
         val parseEventFlow = toParseEventFlow(xml)
         runBlocking {
           parseEventFlow.first() shouldBe StartDocument("", "UTF-8", true)
@@ -81,7 +81,7 @@ class XmlFlowMapperTest : FunSpec() {
                     <myxml>
                     <?xml-stylesheet href="mystyle.xslt" type="text/xsl"?>
                     </myxml>
-                """.trimIndent()
+        """.trimIndent()
         val parseEventFlow = toParseEventFlow(xml)
         runBlocking {
           val parseEvent = parseEventFlow.filter { it is ProcessingInstruction }.first()
@@ -102,13 +102,12 @@ class XmlFlowMapperTest : FunSpec() {
                     <myxml>
                         <!-- comment text -->
                     </myxml>
-                """.trimIndent()
+        """.trimIndent()
         val parseEventFlow = toParseEventFlow(xml)
         runBlocking {
           val parseEvent = parseEventFlow.filter { it is Comment }.first()
           parseEvent shouldBe Comment(" comment text ")
         }
-
       }
 
       // ignorable white space depends on validation, so we should ignore it
@@ -126,7 +125,7 @@ class XmlFlowMapperTest : FunSpec() {
                     <myxml>
                         <![CDATA[ some cdata ]]>
                     </myxml>
-                """.trimIndent()
+        """.trimIndent()
         val parseEventFlow = toParseEventFlow(xml)
         runBlocking {
           val parseEvent = parseEventFlow.filter { it is CData }.first()
@@ -143,7 +142,6 @@ class XmlFlowMapperTest : FunSpec() {
           element shouldBe StartElement("myxml", mapOf("foo" to "bar", "wibble" to "wobble"))
         }
       }
-
     }
 
     context("coalescing characters") {
@@ -170,7 +168,7 @@ class XmlFlowMapperTest : FunSpec() {
                     <myxml>
                         <![CDATA[ some cdata ]]>
                     </myxml>
-                """.trimIndent()
+        """.trimIndent()
         val parseEventFlow = toCoalescingParseEventFlow(xml)
         runBlocking {
           val parseEvent = parseEventFlow.filter { it is CData }.first()
@@ -188,7 +186,6 @@ class XmlFlowMapperTest : FunSpec() {
         }
       }
     }
-
   }
 
   private fun toCoalescingParseEventFlow(vararg xmlParts: String): Flow<SimpleXmlParseEvent> {
@@ -199,6 +196,4 @@ class XmlFlowMapperTest : FunSpec() {
     val byteArrayFlow = listOf(*xmlParts).map { it.encodeToByteArray() }.asFlow()
     return toParseEvents(byteArrayFlow)
   }
-
-
 }

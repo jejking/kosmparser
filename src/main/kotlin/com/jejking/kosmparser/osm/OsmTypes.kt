@@ -33,7 +33,6 @@ data class Point(val lat: Double, val lon: Double) {
  */
 data class Bounds(val minPoint: Point, val maxPoint: Point)
 
-
 /**
  * Represents [attributes that are common](https://wiki.openstreetmap.org/wiki/Elements#Common_attributes)
  * to [Node], [Way] and [Relation] elements.
@@ -46,15 +45,17 @@ data class Bounds(val minPoint: Point, val maxPoint: Point)
  * @param version edit version of the object
  * @param changeSet most recent changeset number in which object was created or updated
  */
-data class ElementMetadata(val id: Long,
-                           val user: String?,
-                           val uid: Long,
-                           val timestamp: ZonedDateTime,
-                           val visible: Boolean = true,
-                           val version: Long,
-                           val changeSet: Long)
+data class ElementMetadata(
+  val id: Long,
+  val user: String?,
+  val uid: Long,
+  val timestamp: ZonedDateTime,
+  val visible: Boolean = true,
+  val version: Long,
+  val changeSet: Long
+)
 
-sealed class OsmData {}
+sealed class OsmData
 
 /**
  * OSM Map [Element](https://wiki.openstreetmap.org/wiki/Elements) -
@@ -79,9 +80,11 @@ sealed class Element() : OsmData() {
  * @param tags element tags
  * @param point the point that is functioning as a Node
  */
-data class Node(override val elementMetadata: ElementMetadata,
-                override val tags: Map<String, String>,
-                val point: Point) : Element()
+data class Node(
+  override val elementMetadata: ElementMetadata,
+  override val tags: Map<String, String>,
+  val point: Point
+) : Element()
 
 /**
  * Represents an [OSM Way](https://wiki.openstreetmap.org/wiki/Way). It would normally have
@@ -93,9 +96,11 @@ data class Node(override val elementMetadata: ElementMetadata,
  * ways with zero or one node identifiers will be accepted.
  * @throws IllegalStateException if list of more than 2000 node identifiers is presented
  */
-data class Way(override val elementMetadata: ElementMetadata,
-               override val tags: Map<String, String>,
-               val nds: List<Long>) : Element() {
+data class Way(
+  override val elementMetadata: ElementMetadata,
+  override val tags: Map<String, String>,
+  val nds: List<Long>
+) : Element() {
 
   init {
     check(nds.size <= 2000) { "nds exceeds 2000 limit with ${nds.size} elements." }
@@ -136,9 +141,11 @@ data class Member(val type: MemberType, val id: Long, val role: String?)
  * @param tags element tags
  * @param members list of relation members
  */
-data class Relation(override val elementMetadata: ElementMetadata,
-                    override val tags: Map<String, String>,
-                    val members: List<Member>) : Element()
+data class Relation(
+  override val elementMetadata: ElementMetadata,
+  override val tags: Map<String, String>,
+  val members: List<Member>
+) : Element()
 
 /**
  * Represents metadata about an OSM XML.
@@ -148,7 +155,6 @@ data class Relation(override val elementMetadata: ElementMetadata,
  * @param bounds geographical bounds of the area described
  */
 data class OsmMetadata(val version: String?, val generator: String?, val bounds: Bounds?) : OsmData()
-
 
 /**
  * Represents the data produced whilst reading an

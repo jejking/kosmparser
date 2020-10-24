@@ -12,6 +12,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.ByteBuffer
 import java.time.Duration
+import java.util.concurrent.Flow.Publisher
 
 val validSchemes = setOf("http", "https")
 
@@ -47,15 +48,15 @@ fun URI.asFlow(httpClient: HttpClient, timeout: Duration = Duration.ofSeconds(10
   }
 }
 
-private fun checkStatusCode(response: HttpResponse<java.util.concurrent.Flow.Publisher<List<ByteBuffer>>>, theURI: URI) {
+private fun checkStatusCode(response: HttpResponse<Publisher<List<ByteBuffer>>>, theURI: URI) {
   val statusCode = response.statusCode()
 
   if (statusCode != 200) {
-    throw IOException("Non-200 Status Code ${statusCode} at URI ${theURI}")
+    throw IOException("Non-200 Status Code $statusCode at URI $theURI")
   }
 }
 
-private fun doGet(timeout: Duration, theURI: URI, httpClient: HttpClient): HttpResponse<java.util.concurrent.Flow.Publisher<List<ByteBuffer>>> {
+private fun doGet(timeout: Duration, theURI: URI, httpClient: HttpClient): HttpResponse<Publisher<List<ByteBuffer>>> {
   val request = HttpRequest.newBuilder()
     .timeout(timeout)
     .uri(theURI)

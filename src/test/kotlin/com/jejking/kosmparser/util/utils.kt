@@ -12,5 +12,3 @@ fun getPath(path: String): Path {
   val url = currentThread().contextClassLoader.getResource(path)
   return Paths.get(url.toURI())
 }
-
-
