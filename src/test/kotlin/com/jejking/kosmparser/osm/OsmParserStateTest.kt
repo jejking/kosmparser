@@ -318,10 +318,10 @@ class OsmParserStateTest : FunSpec() {
 
       test("sees a relation element") {
         // if we see a way element, we move to ReadingRelations
-        val relation = StartElement("relation")
+        val relation = StartElement("relation", standardElementMetadataAttrs)
         val readingNodes = ReadingNodes()
         val (parserState, _) = readingNodes.accept(relation)
-        parserState.shouldBeTypeOf<ReadingRelations>()
+        parserState.shouldBeTypeOf<ReadingMembers>()
       }
 
       test("it sees the end of osm") {
@@ -521,7 +521,7 @@ class OsmParserStateTest : FunSpec() {
         val readingWays = ReadingWays()
 
         val (parserState, _) = readingWays.accept(relation)
-        parserState.shouldBeTypeOf<ReadingRelations>()
+        parserState.shouldBeTypeOf<ReadingMembers>()
       }
 
       test("sees end of osm element") {
@@ -530,6 +530,171 @@ class OsmParserStateTest : FunSpec() {
 
         val (parserState, _) = readingWays.accept(endElement)
         parserState shouldBe ReadingOsmMetadata
+      }
+    }
+
+    context("reading relations") {
+
+      val standardElementMetadataAttrs = mapOf(
+        "id" to "123456",
+        "user" to "aUser",
+        "uid" to "987654321",
+        "timestamp" to "2014-05-14T14:12:29Z",
+        "visible" to "true",
+        "version" to "123",
+        "changeset" to "456789"
+      )
+
+      test("should read in relation start element") {
+        // nothing special, just standard element metadata
+        val relation = StartElement("relation", standardElementMetadataAttrs)
+        val readingRelations = ReadingRelations()
+
+        val (parserState, _) = readingRelations.accept(relation)
+
+        parserState.shouldBeTypeOf<ReadingMembers>()
+      }
+
+      test("should throw exception (as usual) if missing standard element metadata") {
+        val attrs = mapOf(
+          "user" to "aUser",
+          "uid" to "987654321",
+          "timestamp" to "2014-05-14T14:12:29Z",
+          "visible" to "true",
+          "version" to "123",
+          "changeset" to "456789"
+        )
+
+        val startElement = StartElement("relation", attrs)
+        val readingRelations = ReadingWays()
+        shouldThrow<IllegalStateException> {
+          readingRelations.accept(startElement)
+        }
+      }
+
+      context("reading members") {
+        test("should read node member with type, long and role set") {
+          val nodeMember = StartElement("member", mapOf("type" to "node", "ref" to "123", "role" to "foo"))
+          val readingMembers = ReadingMembers(ReadingRelations())
+
+          val (parserState, _) = readingMembers.accept(nodeMember)
+          parserState shouldBeSameInstanceAs readingMembers
+        }
+
+        test("should read way member") {
+          val wayMember = StartElement("member", mapOf("type" to "way", "ref" to "123", "role" to "foo"))
+          val readingMembers = ReadingMembers(ReadingRelations())
+
+          readingMembers.accept(wayMember)
+        }
+
+        test("should read relation member") {
+          val wayMember = StartElement("member", mapOf("type" to "relation", "ref" to "123", "role" to "foo"))
+          val readingMembers = ReadingMembers(ReadingRelations())
+
+          readingMembers.accept(wayMember)
+        }
+
+        test("should throw exception if type cannot be mapped") {
+          val fooMember = StartElement("rel", mapOf("type" to "foo", "ref" to "123", "role" to "foo"))
+          val readingMembers = ReadingMembers(ReadingRelations())
+
+          shouldThrow<IllegalStateException> {
+            readingMembers.accept(fooMember)
+          }
+        }
+
+        test("should throw exception if ref cannot be parsed to long") {
+          val wayMember = StartElement("rel", mapOf("type" to "way", "ref" to "abcd", "role" to "foo"))
+          val readingMembers = ReadingMembers(ReadingRelations())
+
+          shouldThrow<IllegalStateException> {
+            readingMembers.accept(wayMember)
+          }
+        }
+
+        test("should go to reading tags if tag start element seen") {
+          val tagElement = StartElement("tag", mapOf("k" to "key", "v" to "value"))
+          val readingMembers = ReadingMembers(ReadingRelations())
+
+          val (parserState, _) = readingMembers.accept(tagElement)
+          parserState.shouldBeTypeOf<ReadingTags>()
+        }
+      }
+
+      test("should emit Relation with members and tags") {
+        // including members & tags
+        val startRelation = StartElement("relation", standardElementMetadataAttrs)
+        val member1 = StartElement("member", mapOf("type" to "node", "ref" to "123", "role" to "undetermined"))
+        val member2 = StartElement("member", mapOf("type" to "way", "ref" to "456", "role" to ""))
+
+        val fooTag = StartElement("tag", mapOf("k" to "foo", "v" to "bar"))
+        val wibbleTag = StartElement("tag", mapOf("k" to "wibble", "v" to "wobble"))
+
+        var parserState: ParserState = ReadingRelations()
+        parserState = parserState.accept(startRelation).first
+        parserState = parserState.accept(member1).first
+        parserState = parserState.accept(EndElement("member")).first
+        parserState = parserState.accept(member2).first
+        parserState = parserState.accept(EndElement("member")).first
+        parserState = parserState.accept(fooTag).first
+        parserState = parserState.accept(EndElement("tag")).first
+        parserState = parserState.accept(wibbleTag).first
+        parserState = parserState.accept(EndElement("tag")).first
+        val (endParserState, osmData) = parserState.accept(EndElement("relation"))
+
+        endParserState.shouldBeTypeOf<ReadingRelations>()
+        val relation = osmData as Relation
+        relation.members shouldBe listOf(
+          Member(MemberType.NODE, 123, "undetermined"),
+          Member(MemberType.WAY, 456, null)
+        )
+        relation.tags shouldBe mapOf("foo" to "bar", "wibble" to "wobble")
+        relation.elementMetadata shouldBe readElementMetadata(startRelation)
+      }
+
+      test("should handle case with no members") {
+        val startRelation = StartElement("relation", standardElementMetadataAttrs)
+
+        val fooTag = StartElement("tag", mapOf("k" to "foo", "v" to "bar"))
+        val wibbleTag = StartElement("tag", mapOf("k" to "wibble", "v" to "wobble"))
+
+        var parserState: ParserState = ReadingRelations()
+        parserState = parserState.accept(startRelation).first
+        parserState = parserState.accept(fooTag).first
+        parserState = parserState.accept(EndElement("tag")).first
+        parserState = parserState.accept(wibbleTag).first
+        parserState = parserState.accept(EndElement("tag")).first
+        val (endParserState, osmData) = parserState.accept(EndElement("relation"))
+
+        endParserState.shouldBeTypeOf<ReadingRelations>()
+        val relation = osmData as Relation
+        relation.members shouldBe listOf()
+        relation.tags shouldBe mapOf("foo" to "bar", "wibble" to "wobble")
+        relation.elementMetadata shouldBe readElementMetadata(startRelation)
+      }
+
+      test("should handle case with no tags") {
+        val startRelation = StartElement("relation", standardElementMetadataAttrs)
+        val member1 = StartElement("member", mapOf("type" to "node", "ref" to "123", "role" to "undetermined"))
+        val member2 = StartElement("member", mapOf("type" to "way", "ref" to "456", "role" to ""))
+
+        var parserState: ParserState = ReadingRelations()
+        parserState = parserState.accept(startRelation).first
+        parserState = parserState.accept(member1).first
+        parserState = parserState.accept(EndElement("member")).first
+        parserState = parserState.accept(member2).first
+        parserState = parserState.accept(EndElement("member")).first
+        val (endParserState, osmData) = parserState.accept(EndElement("relation"))
+
+        endParserState.shouldBeTypeOf<ReadingRelations>()
+        val relation = osmData as Relation
+        relation.members shouldBe listOf(
+          Member(MemberType.NODE, 123, "undetermined"),
+          Member(MemberType.WAY, 456, null)
+        )
+        relation.tags shouldBe mapOf()
+        relation.elementMetadata shouldBe readElementMetadata(startRelation)
       }
     }
 

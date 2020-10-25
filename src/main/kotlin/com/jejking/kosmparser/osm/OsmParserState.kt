@@ -283,15 +283,104 @@ class ReadingWays : TagReceiver() {
   }
 }
 
-class ReadingMembers : ParserState() {
+class ReadingMembers(private val readingRelations: ReadingRelations) : ParserState() {
+
+  private val members = mutableListOf<Member>()
+
   override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
-    TODO("Not yet implemented")
+    return when (xmlparseEventSimpleXml) {
+      is StartElement -> readStartElement(xmlparseEventSimpleXml)
+      is EndElement -> readEndElement(xmlparseEventSimpleXml)
+      else -> throw IllegalStateException()
+    }
+  }
+
+  private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
+    return when (endElement.localName) {
+      "member" -> this to null
+      "relation" -> {
+        readingRelations.acceptMembers(this.members.toList())
+        readingRelations.accept(endElement)
+      }
+      else -> throw IllegalStateException()
+    }
+  }
+
+  private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
+    return when (startElement.localName) {
+      "member" -> readMemberElement(startElement)
+      "tag" -> {
+        readingRelations.acceptMembers(this.members.toList())
+        ReadingTags(readingRelations).let { it.accept(startElement) }
+      }
+      else -> return readingRelations.accept(startElement)
+    }
+  }
+
+  private fun readMemberElement(startElement: StartElement): Pair<ParserState, OsmData?> {
+    val typeString = startElement.attributes.getOrThrow("type")
+    val refString = startElement.attributes.getOrThrow("ref")
+    val roleString = startElement.attributes.getOrThrow("role")
+
+    val type = toMemberType(typeString)
+    val ref = try {
+      refString.toLong()
+    } catch (nfe: NumberFormatException) {
+      throw IllegalStateException(nfe)
+    }
+    val role = roleString.let { if (it.isBlank()) null else it }
+    this.members.add(Member(type, ref, role))
+    return this to null
+  }
+
+  private fun toMemberType(typeString: String): MemberType {
+    return when (typeString) {
+      "node" -> MemberType.NODE
+      "way" -> MemberType.WAY
+      "relation" -> MemberType.RELATION
+      else -> throw IllegalStateException("unknown member type $typeString")
+    }
   }
 }
 
-class ReadingRelations : ParserState() {
+class ReadingRelations : TagReceiver() {
+
+  private lateinit var elementMetadata: ElementMetadata
+  private lateinit var members: List<Member>
+
   override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
-    return this to null
+    return when (xmlparseEventSimpleXml) {
+      is StartElement -> readStartElement(xmlparseEventSimpleXml)
+      is EndElement -> readEndElement(xmlparseEventSimpleXml)
+      else -> throw IllegalStateException()
+    }
+  }
+
+  private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
+    return when (endElement.localName) {
+      "relation" -> {
+        val relation = Relation(elementMetadata, tags, members)
+        return ReadingRelations() to relation
+      }
+      "osm" -> ReadingOsmMetadata.accept(endElement)
+      else -> throw IllegalStateException("Got unexpected end element ${endElement.localName}")
+    }
+  }
+
+  private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
+    return when (startElement.localName) {
+      "relation" -> readRelationElement(startElement)
+      else -> throw IllegalStateException("Got unexpected start element ${startElement.localName}")
+    }
+  }
+
+  private fun readRelationElement(startElement: StartElement): Pair<ParserState, OsmData?> {
+    elementMetadata = readElementMetadata(startElement)
+    return (ReadingMembers(this)) to null
+  }
+
+  internal fun acceptMembers(members: List<Member>) {
+    this.members = members
   }
 }
 
