@@ -1,9 +1,13 @@
 package com.jejking.kosmparser.osm
 
+import com.jejking.kosmparser.xml.CData
 import com.jejking.kosmparser.xml.Characters
+import com.jejking.kosmparser.xml.Comment
 import com.jejking.kosmparser.xml.EndDocument
 import com.jejking.kosmparser.xml.EndElement
+import com.jejking.kosmparser.xml.ProcessingInstruction
 import com.jejking.kosmparser.xml.SimpleXmlParseEvent
+import com.jejking.kosmparser.xml.Space
 import com.jejking.kosmparser.xml.StartDocument
 import com.jejking.kosmparser.xml.StartElement
 import java.time.Instant
@@ -33,12 +37,31 @@ import java.time.ZonedDateTime
  */
 
 sealed class ParserState {
-  abstract fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?>
+  fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+    return when (xmlparseEventSimpleXml) {
+      is Characters -> handleCharacters(xmlparseEventSimpleXml)
+      is Space -> this to null
+      is Comment -> this to null
+      is ProcessingInstruction -> this to null
+      is CData -> this to null
+      else -> handleParseEvents(xmlparseEventSimpleXml)
+    }
+  }
+
+  private fun handleCharacters(characters: Characters): Pair<ParserState, OsmData?> {
+    if (characters.text.trim().isEmpty()) {
+      return this to null
+    } else {
+      throw IllegalStateException("Unexpected characters: $characters")
+    }
+  }
+
+  abstract fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?>
 }
 
 object ReadingOsmMetadata : ParserState() {
 
-  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+  override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
       is StartDocument -> this to null
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
@@ -70,11 +93,10 @@ object ReadingOsmMetadata : ParserState() {
 }
 
 class ReadingBounds(val apiVersion: String?, val generator: String?) : ParserState() {
-  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+  override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> ReadingNodes() to null
-      is Characters -> this to null
       else -> throw IllegalStateException("Got unexpected element $xmlparseEventSimpleXml")
     }
   }
@@ -106,7 +128,7 @@ class ReadingTags(private val tagReceiver: TagReceiver) : ParserState() {
 
   private val tagHolder = mutableMapOf<String, String>()
 
-  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+  override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
@@ -156,7 +178,7 @@ class ReadingNodes : TagReceiver() {
   private lateinit var elementMetadata: ElementMetadata
   private lateinit var point: Point
 
-  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+  override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
@@ -200,11 +222,10 @@ class ReadingNds(private val readingWays: ReadingWays) : ParserState() {
 
   private val ndRefs = mutableListOf<Long>()
 
-  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+  override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
-      is Characters -> this to null
       else -> throw IllegalStateException()
     }
   }
@@ -247,11 +268,10 @@ class ReadingWays : TagReceiver() {
   private lateinit var elementMetadata: ElementMetadata
   private lateinit var ndRefs: List<Long>
 
-  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+  override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
-      is Characters -> this to null
       else -> throw IllegalStateException()
     }
   }
@@ -290,11 +310,10 @@ class ReadingMembers(private val readingRelations: ReadingRelations) : ParserSta
 
   private val members = mutableListOf<Member>()
 
-  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+  override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
-      is Characters -> this to null
       else -> throw IllegalStateException()
     }
   }
@@ -352,11 +371,10 @@ class ReadingRelations : TagReceiver() {
   private lateinit var elementMetadata: ElementMetadata
   private lateinit var members: List<Member>
 
-  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+  override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
-      is Characters -> this to null
       else -> throw IllegalStateException()
     }
   }
@@ -390,7 +408,7 @@ class ReadingRelations : TagReceiver() {
 }
 
 object Finished : ParserState() {
-  override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+  override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     TODO("Not yet implemented")
   }
 }

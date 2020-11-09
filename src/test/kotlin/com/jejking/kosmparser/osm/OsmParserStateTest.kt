@@ -184,7 +184,7 @@ class OsmParserStateTest : FunSpec() {
     context("reading tags") {
 
       class TestTagReceiver : TagReceiver() {
-        override fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
+        override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
           return this to null
         }
 
