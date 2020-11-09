@@ -1,8 +1,13 @@
 package com.jejking.kosmparser.osm
 
+import com.jejking.kosmparser.xml.CData
+import com.jejking.kosmparser.xml.Characters
+import com.jejking.kosmparser.xml.Comment
 import com.jejking.kosmparser.xml.EndDocument
 import com.jejking.kosmparser.xml.EndElement
+import com.jejking.kosmparser.xml.ProcessingInstruction
 import com.jejking.kosmparser.xml.SimpleXmlParseEvent
+import com.jejking.kosmparser.xml.Space
 import com.jejking.kosmparser.xml.StartDocument
 import com.jejking.kosmparser.xml.StartElement
 import io.kotest.assertions.throwables.shouldThrow
@@ -20,7 +25,43 @@ import java.time.ZonedDateTime
 class OsmParserStateTest : FunSpec() {
 
   init {
+
+    context("shared parse event handling logic") {
+
+      test("should ignore characters if can be trimmed to empty string") {
+        listOf(
+          Characters(""),
+          Characters(" "),
+          Characters("\t"),
+          Characters("   \n    ")
+        ).forEach { ReadingOsmMetadata.accept(it) shouldBe (ReadingOsmMetadata to null) }
+      }
+
+      test("should throw exception if characters cannot be trimmed to empty string") {
+        shouldThrow<java.lang.IllegalStateException> {
+          ReadingOsmMetadata.accept(Characters("foo"))
+        }
+      }
+
+      test("should ignore comment") {
+        ReadingOsmMetadata.accept(Comment("a comment")) shouldBe (ReadingOsmMetadata to null)
+      }
+
+      test("should ignore processing instruction") {
+        ReadingOsmMetadata.accept(ProcessingInstruction("PITarget", "PIContent")) shouldBe (ReadingOsmMetadata to null)
+      }
+
+      test("should ignore space") {
+        ReadingOsmMetadata.accept(Space(" ")) shouldBe (ReadingOsmMetadata to null)
+      }
+
+      test("should ignore cdata") {
+        ReadingOsmMetadata.accept(CData("cdata")) shouldBe (ReadingOsmMetadata to null)
+      }
+    }
+
     context("reading osm metadata") {
+
       test("should ignore StartDocument") {
         val startDocument = StartDocument("", "UTF-8", false)
         ReadingOsmMetadata.accept(startDocument) shouldBe (ReadingOsmMetadata to null)
