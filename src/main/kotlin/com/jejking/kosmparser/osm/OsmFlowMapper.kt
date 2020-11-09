@@ -10,8 +10,8 @@ object OsmFlowMapper {
 
     var osmParserState: ParserState = ReadingOsmMetadata
 
-    return simpleXmlParseEventFlow.transform {
-      val (newParserState, osmData) = osmParserState.accept(it)
+    return simpleXmlParseEventFlow.transform { simpleXmlParseEvent ->
+      val (newParserState, osmData) = osmParserState.accept(simpleXmlParseEvent)
       osmData?.also { emit(it) }
       osmParserState = newParserState
     }

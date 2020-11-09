@@ -1,5 +1,6 @@
 package com.jejking.kosmparser.osm
 
+import com.jejking.kosmparser.xml.Characters
 import com.jejking.kosmparser.xml.EndDocument
 import com.jejking.kosmparser.xml.EndElement
 import com.jejking.kosmparser.xml.SimpleXmlParseEvent
@@ -29,9 +30,6 @@ import java.time.ZonedDateTime
  * relations
  *
  * end osm element
- *
- * <-- ignore end document
- *
  */
 
 sealed class ParserState {
@@ -76,7 +74,8 @@ class ReadingBounds(val apiVersion: String?, val generator: String?) : ParserSta
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> ReadingNodes() to null
-      else -> throw IllegalStateException()
+      is Characters -> this to null
+      else -> throw IllegalStateException("Got unexpected element $xmlparseEventSimpleXml")
     }
   }
 
@@ -111,6 +110,7 @@ class ReadingTags(private val tagReceiver: TagReceiver) : ParserState() {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
+      is Characters -> this to null
       else -> throw IllegalStateException()
     }
   }
@@ -160,7 +160,8 @@ class ReadingNodes : TagReceiver() {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
-      else -> throw IllegalStateException()
+      is Characters -> this to null
+      else -> throw IllegalStateException("Got unexpected parse event: $xmlparseEventSimpleXml")
     }
   }
 
@@ -203,6 +204,7 @@ class ReadingNds(private val readingWays: ReadingWays) : ParserState() {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
+      is Characters -> this to null
       else -> throw IllegalStateException()
     }
   }
@@ -249,6 +251,7 @@ class ReadingWays : TagReceiver() {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
+      is Characters -> this to null
       else -> throw IllegalStateException()
     }
   }
@@ -291,6 +294,7 @@ class ReadingMembers(private val readingRelations: ReadingRelations) : ParserSta
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
+      is Characters -> this to null
       else -> throw IllegalStateException()
     }
   }
@@ -352,6 +356,7 @@ class ReadingRelations : TagReceiver() {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
+      is Characters -> this to null
       else -> throw IllegalStateException()
     }
   }

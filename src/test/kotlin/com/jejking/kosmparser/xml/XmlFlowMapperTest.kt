@@ -2,6 +2,8 @@ package com.jejking.kosmparser.xml
 
 import com.jejking.kosmparser.xml.XmlFlowMapper.coalesceText
 import com.jejking.kosmparser.xml.XmlFlowMapper.toParseEvents
+import com.jejking.kosmparser.xml.XmlFlowTools.toCoalescingParseEventFlow
+import com.jejking.kosmparser.xml.XmlFlowTools.toParseEventFlow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -188,12 +190,5 @@ class XmlFlowMapperTest : FunSpec() {
     }
   }
 
-  private fun toCoalescingParseEventFlow(vararg xmlParts: String): Flow<SimpleXmlParseEvent> {
-    return toParseEventFlow(*xmlParts).coalesceText()
-  }
 
-  private fun toParseEventFlow(vararg xmlParts: String): Flow<SimpleXmlParseEvent> {
-    val byteArrayFlow = listOf(*xmlParts).map { it.encodeToByteArray() }.asFlow()
-    return toParseEvents(byteArrayFlow)
-  }
 }

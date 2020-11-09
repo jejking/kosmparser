@@ -696,6 +696,14 @@ class OsmParserStateTest : FunSpec() {
         relation.tags shouldBe mapOf()
         relation.elementMetadata shouldBe readElementMetadata(startRelation)
       }
+
+      test("sees end of osm element") {
+        var readingRelations = ReadingRelations()
+        val endElement = EndElement("osm")
+        val (parserState, _) = readingRelations.accept(endElement)
+
+        parserState shouldBe ReadingOsmMetadata
+      }
     }
 
     context("readElementMetadata function") {
