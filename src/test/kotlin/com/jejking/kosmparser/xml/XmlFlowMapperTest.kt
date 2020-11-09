@@ -1,14 +1,10 @@
 package com.jejking.kosmparser.xml
 
-import com.jejking.kosmparser.xml.XmlFlowMapper.coalesceText
-import com.jejking.kosmparser.xml.XmlFlowMapper.toParseEvents
 import com.jejking.kosmparser.xml.XmlFlowTools.toCoalescingParseEventFlow
 import com.jejking.kosmparser.xml.XmlFlowTools.toParseEventFlow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -189,6 +185,4 @@ class XmlFlowMapperTest : FunSpec() {
       }
     }
   }
-
-
 }

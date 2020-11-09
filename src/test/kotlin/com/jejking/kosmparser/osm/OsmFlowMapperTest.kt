@@ -46,9 +46,11 @@ class OsmFlowMapperTest : FunSpec() {
             visible = true,
             timestamp = expectedTimestamp,
             user = "foo",
-            version = 1),
+            version = 1
+          ),
           tags = emptyMap(),
-          point = Point(lat=53.12345, lon=10.2345))
+          point = Point(lat = 53.12345, lon = 10.2345)
+        )
 
         val node2 = Node(
           elementMetadata = ElementMetadata(
@@ -58,13 +60,64 @@ class OsmFlowMapperTest : FunSpec() {
             visible = true,
             timestamp = expectedTimestamp,
             user = "foo",
-            version = 1),
+            version = 1
+          ),
           tags = mapOf("foo" to "bar", "wibble" to "wobble"),
-          point = Point(lat=54.23456, lon=11.5432))
+          point = Point(lat = 54.23456, lon = 11.5432)
+        )
 
         runBlocking {
           val nodes = osmDataFlow.filter { it is Node }.toList()
           nodes shouldBe listOf(node1, node2)
+        }
+      }
+
+      test("should emit a way") {
+
+        val osmDataFlow = toOsmDataFlow(xmlParseEvents("test1.osm"))
+        val way = Way(
+          elementMetadata = ElementMetadata(
+            id = 3,
+            changeSet = 1,
+            uid = 1,
+            visible = true,
+            timestamp = expectedTimestamp,
+            user = "foo",
+            version = 1
+          ),
+          tags = mapOf("highway" to "motorway"),
+          nds = listOf(1, 2)
+        )
+
+        runBlocking {
+          val ways = osmDataFlow.filter { it is Way }.toList()
+          ways shouldBe listOf(way)
+        }
+      }
+
+      test("should emit a relation") {
+        val osmDataFlow = toOsmDataFlow(xmlParseEvents("test1.osm"))
+
+        val relation = Relation(
+          elementMetadata = ElementMetadata(
+            id = 4,
+            changeSet = 1,
+            timestamp = expectedTimestamp,
+            uid = 1,
+            user = "foo",
+            version = 1,
+            visible = true
+          ),
+          tags = mapOf("route" to "secret"),
+          members = listOf(
+            Member(type = MemberType.NODE, id = 1, role = "thing"),
+            Member(type = MemberType.WAY, id = 3, role = null),
+            Member(type = MemberType.RELATION, id = 666, role = "dark-satanic")
+          )
+        )
+        runBlocking {
+          val relations = osmDataFlow.filter { it is Relation }.toList()
+          relations shouldBe listOf(relation)
         }
       }
     }

@@ -14,5 +14,4 @@ object XmlFlowTools {
     val byteArrayFlow = listOf(*xmlParts).map { it.encodeToByteArray() }.asFlow()
     return XmlFlowMapper.toParseEvents(byteArrayFlow)
   }
-
 }
