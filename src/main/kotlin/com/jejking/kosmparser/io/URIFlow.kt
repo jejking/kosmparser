@@ -31,8 +31,10 @@ const val DEFAULT_TIMEOUT_SECONDS = 10L
  * @param timeout the timeout to set on the client, default 10 seconds
  */
 @kotlinx.coroutines.ExperimentalCoroutinesApi
-fun URI.asFlow(httpClient: HttpClient,
-               timeout: Duration = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS)): Flow<ByteArray> {
+fun URI.asFlow(
+  httpClient: HttpClient,
+  timeout: Duration = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS)
+): Flow<ByteArray> {
 
   check(scheme in validSchemes)
   val theURI = this

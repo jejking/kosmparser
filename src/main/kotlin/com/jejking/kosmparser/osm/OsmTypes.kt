@@ -89,7 +89,6 @@ data class Node(
 const val MAX_NODES_IN_WAY = 2000
 const val MIN_NODES_IN_WAY = 2
 
-
 /**
  * Represents an [OSM Way](https://wiki.openstreetmap.org/wiki/Way). It would normally have
  * at last one tag or be included in a [Relation].
@@ -105,7 +104,6 @@ data class Way(
   override val tags: Map<String, String>,
   val nds: List<Long>
 ) : Element() {
-
 
   init {
     check(nds.size <= MAX_NODES_IN_WAY) { "nds exceeds $MAX_NODES_IN_WAY limit with ${nds.size} elements." }
