@@ -70,10 +70,6 @@ object XmlFlowMapper {
     return CData(parser.text)
   }
 
-  private fun space(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): SimpleXmlParseEvent {
-    return Space(parser.text)
-  }
-
   private fun comment(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): SimpleXmlParseEvent {
     return Comment(parser.text)
   }

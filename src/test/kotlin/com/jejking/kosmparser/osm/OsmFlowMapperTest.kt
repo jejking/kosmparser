@@ -6,10 +6,12 @@ import com.jejking.kosmparser.util.getPath
 import com.jejking.kosmparser.util.openFileChannel
 import com.jejking.kosmparser.xml.SimpleXmlParseEvent
 import com.jejking.kosmparser.xml.XmlFlowMapper.toParseEvents
+import com.jejking.kosmparser.xml.XmlFlowTools.toParseEventFlow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
@@ -119,6 +121,44 @@ class OsmFlowMapperTest : FunSpec() {
           val relations = osmDataFlow.filter { it is Relation }.toList()
           relations shouldBe listOf(relation)
         }
+      }
+    }
+    context("nodes only") {
+      test("should run through OK") {
+        val xml =
+          """
+        <osm generator="manual" version="0.6">
+          <bounds maxlat="53.5707" maxlon="10.0314" minlat="53.5646" minlon="10.0155"/>
+          <node id="1" lat="53.12345" lon="10.2345" changeset="1" timestamp="2014-05-14T14:12:39Z"
+          uid="1" user="foo" version="1" visible="true"/>
+          <node id="2" lat="54.23456" lon="11.5432" changeset="1" timestamp="2014-05-14T14:12:39Z"
+            uid="1" user="foo" version="1" visible="true">
+            <tag k="foo" v="bar"/>
+            <tag k="wibble" v="wobble"/>
+          </node>
+        </osm>
+          """.trimIndent()
+
+        val osmDataFlow = toOsmDataFlow(toParseEventFlow(xml))
+        osmDataFlow.count() shouldBe 3
+      }
+    }
+    context("ways only") {
+      test("should run through OK") {
+        val xml =
+          """
+        <osm generator="manual" version="0.6">
+          <bounds maxlat="53.5707" maxlon="10.0314" minlat="53.5646" minlon="10.0155"/>
+          <way id="3" changeset="1" timestamp="2014-05-14T14:12:39Z" uid="1" user="foo" version="1" visible="true">
+            <nd ref="1"/>
+            <nd ref="2"/>
+            <tag k="highway" v="motorway"/>
+          </way>
+        </osm>
+          """.trimIndent()
+
+        val osmDataFlow = toOsmDataFlow(toParseEventFlow(xml))
+        osmDataFlow.count() shouldBe 2
       }
     }
   }

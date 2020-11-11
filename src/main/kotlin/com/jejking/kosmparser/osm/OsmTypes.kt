@@ -61,7 +61,7 @@ sealed class OsmData
  * OSM Map [Element](https://wiki.openstreetmap.org/wiki/Elements) -
  * sealed supertype for [Node], [Way] and [Relation].
  */
-sealed class Element() : OsmData() {
+sealed class Element : OsmData() {
   /**
    * Common element metadata.
    */
@@ -86,6 +86,10 @@ data class Node(
   val point: Point
 ) : Element()
 
+const val MAX_NODES_IN_WAY = 2000
+const val MIN_NODES_IN_WAY = 2
+
+
 /**
  * Represents an [OSM Way](https://wiki.openstreetmap.org/wiki/Way). It would normally have
  * at last one tag or be included in a [Relation].
@@ -102,14 +106,15 @@ data class Way(
   val nds: List<Long>
 ) : Element() {
 
+
   init {
-    check(nds.size <= 2000) { "nds exceeds 2000 limit with ${nds.size} elements." }
+    check(nds.size <= MAX_NODES_IN_WAY) { "nds exceeds $MAX_NODES_IN_WAY limit with ${nds.size} elements." }
   }
 
   /**
    * Declares if way is faulty - i.e has less than 2 node identifiers.
    */
-  fun isFaulty(): Boolean = nds.size < 2
+  fun isFaulty(): Boolean = nds.size < MIN_NODES_IN_WAY
 
   /**
    * Declares if way is closed - i.e. has 2 or more identifiers where the first and the

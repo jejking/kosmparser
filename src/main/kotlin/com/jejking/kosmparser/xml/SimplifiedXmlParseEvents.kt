@@ -9,9 +9,9 @@ import javax.xml.stream.XMLStreamConstants
 /**
  * Encapsulates a subset of XML Parse Events.
  */
-sealed class SimpleXmlParseEvent()
+sealed class SimpleXmlParseEvent
 
-sealed class TextEventSimpleXml() : SimpleXmlParseEvent() {
+sealed class TextEventSimpleXml : SimpleXmlParseEvent() {
   abstract val text: String
 }
 

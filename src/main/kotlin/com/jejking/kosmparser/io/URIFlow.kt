@@ -16,6 +16,8 @@ import java.util.concurrent.Flow.Publisher
 
 val validSchemes = setOf("http", "https")
 
+const val DEFAULT_TIMEOUT_SECONDS = 10L
+
 /**
  * Extends URI to `GET` the content of the URI and expose the body of the response as [Flow] of [ByteArray].
  *
@@ -29,7 +31,8 @@ val validSchemes = setOf("http", "https")
  * @param timeout the timeout to set on the client, default 10 seconds
  */
 @kotlinx.coroutines.ExperimentalCoroutinesApi
-fun URI.asFlow(httpClient: HttpClient, timeout: Duration = Duration.ofSeconds(10)): Flow<ByteArray> {
+fun URI.asFlow(httpClient: HttpClient,
+               timeout: Duration = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS)): Flow<ByteArray> {
 
   check(scheme in validSchemes)
   val theURI = this
@@ -48,10 +51,12 @@ fun URI.asFlow(httpClient: HttpClient, timeout: Duration = Duration.ofSeconds(10
   }
 }
 
+const val HTTP_200_OK = 200
+
 private fun checkStatusCode(response: HttpResponse<Publisher<List<ByteBuffer>>>, theURI: URI) {
   val statusCode = response.statusCode()
 
-  if (statusCode != 200) {
+  if (statusCode != HTTP_200_OK) {
     throw IOException("Non-200 Status Code $statusCode at URI $theURI")
   }
 }

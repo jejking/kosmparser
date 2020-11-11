@@ -739,7 +739,7 @@ class OsmParserStateTest : FunSpec() {
       }
 
       test("sees end of osm element") {
-        var readingRelations = ReadingRelations()
+        val readingRelations = ReadingRelations()
         val endElement = EndElement("osm")
         val (parserState, _) = readingRelations.accept(endElement)
 
