@@ -36,7 +36,7 @@ import java.time.ZonedDateTime
  * end osm element
  */
 
-sealed class ParserState {
+internal sealed class ParserState {
   fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
       is Characters -> handleCharacters(xmlparseEventSimpleXml)
@@ -59,7 +59,7 @@ sealed class ParserState {
   abstract fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?>
 }
 
-object ReadingOsmMetadata : ParserState() {
+internal object ReadingOsmMetadata : ParserState() {
 
   override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
@@ -92,7 +92,7 @@ object ReadingOsmMetadata : ParserState() {
   }
 }
 
-class ReadingBounds(val apiVersion: String?, val generator: String?) : ParserState() {
+internal class ReadingBounds(val apiVersion: String?, val generator: String?) : ParserState() {
   override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
@@ -124,7 +124,7 @@ class ReadingBounds(val apiVersion: String?, val generator: String?) : ParserSta
   }
 }
 
-class ReadingTags(private val tagReceiver: TagReceiver) : ParserState() {
+internal class ReadingTags(private val tagReceiver: TagReceiver) : ParserState() {
 
   private val tagHolder = mutableMapOf<String, String>()
 
@@ -164,7 +164,7 @@ class ReadingTags(private val tagReceiver: TagReceiver) : ParserState() {
   }
 }
 
-abstract class TagReceiver : ParserState() {
+internal abstract class TagReceiver : ParserState() {
 
   protected var tags: Map<String, String> = mapOf()
 
@@ -173,7 +173,7 @@ abstract class TagReceiver : ParserState() {
   }
 }
 
-class ReadingNodes : TagReceiver() {
+internal class ReadingNodes : TagReceiver() {
 
   private lateinit var elementMetadata: ElementMetadata
   private lateinit var point: Point
@@ -202,7 +202,7 @@ class ReadingNodes : TagReceiver() {
   private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
     return when (startElement.localName) {
       "node" -> readNodeElement(startElement)
-      "way" -> ReadingWays().let { it.accept(startElement) }
+      "way" -> ReadingWays().accept(startElement)
       "relation" -> ReadingRelations().let { it.accept(startElement) }
       else -> throw IllegalStateException("Got unexpected start element ${startElement.localName}")
     }
@@ -218,7 +218,7 @@ class ReadingNodes : TagReceiver() {
   }
 }
 
-class ReadingNds(private val readingWays: ReadingWays) : ParserState() {
+internal class ReadingNds(private val readingWays: ReadingWays) : ParserState() {
 
   private val ndRefs = mutableListOf<Long>()
 
@@ -263,7 +263,7 @@ class ReadingNds(private val readingWays: ReadingWays) : ParserState() {
   }
 }
 
-class ReadingWays : TagReceiver() {
+internal class ReadingWays : TagReceiver() {
 
   private lateinit var elementMetadata: ElementMetadata
   private lateinit var ndRefs: List<Long>
@@ -306,7 +306,7 @@ class ReadingWays : TagReceiver() {
   }
 }
 
-class ReadingMembers(private val readingRelations: ReadingRelations) : ParserState() {
+internal class ReadingMembers(private val readingRelations: ReadingRelations) : ParserState() {
 
   private val members = mutableListOf<Member>()
 
@@ -366,7 +366,7 @@ class ReadingMembers(private val readingRelations: ReadingRelations) : ParserSta
   }
 }
 
-class ReadingRelations : TagReceiver() {
+internal class ReadingRelations : TagReceiver() {
 
   private lateinit var elementMetadata: ElementMetadata
   private lateinit var members: List<Member>
@@ -407,9 +407,9 @@ class ReadingRelations : TagReceiver() {
   }
 }
 
-object Finished : ParserState() {
+internal object Finished : ParserState() {
   override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
-    TODO("Not yet implemented")
+    return this to null
   }
 }
 

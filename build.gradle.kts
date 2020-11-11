@@ -13,8 +13,10 @@ plugins {
     val testLoggerVersion = "2.1.1"
     val versionsVersion = "0.33.0"
     val detektVersion = "1.14.2"
+    val dokkaVersion = "1.4.10.2"
     // Apply the Kotlin JVM plugin to add support for Kotlin.
     id("org.jetbrains.kotlin.jvm") version kotlinVersion
+    id("org.jetbrains.dokka") version dokkaVersion
     id("org.jlleitschuh.gradle.ktlint") version ktlintVersion
     id("com.adarshr.test-logger") version testLoggerVersion
     id("com.github.ben-manes.versions") version versionsVersion

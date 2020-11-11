@@ -6,6 +6,9 @@ import kotlinx.coroutines.flow.transform
 
 object OsmFlowMapper {
 
+  /**
+   * Converts a flow of XML parse events to a flow of [OsmData].
+   */
   fun toOsmDataFlow(simpleXmlParseEventFlow: Flow<SimpleXmlParseEvent>): OsmDataFlow {
 
     var osmParserState: ParserState = ReadingOsmMetadata
