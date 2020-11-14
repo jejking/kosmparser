@@ -7,6 +7,9 @@ val kotlinxCoRoutinesVersion = "1.4.1"
 
 val sourceCompatibility = JavaVersion.VERSION_11
 
+project.group = "com.jejking"
+project.version = "0.0.1"
+
 plugins {
     val kotlinVersion = "1.4.10"
     val ktlintVersion = "9.4.1"
@@ -23,6 +26,7 @@ plugins {
     id("io.gitlab.arturbosch.detekt") version detektVersion
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
+    `maven-publish`
 }
 
 repositories {
@@ -36,10 +40,10 @@ dependencies {
     // Align versions of all Kotlin components
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
 
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoRoutinesVersion")
+
     // Use the Kotlin JDK 8 standard library.
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoRoutinesVersion")
 
     implementation("org.reactivestreams:reactive-streams:1.0.3")
 
@@ -67,6 +71,20 @@ tasks {
     withType<Test> {
         useJUnitPlatform()
     }
+
+    withType<Jar> {
+        archiveBaseName.set(rootProject.name)
+
+        manifest {
+          attributes(
+            mapOf(
+              "Implementation-Title" to project.name,
+              "Implementation-Version" to project.version,
+              "Class-Path" to configurations.compileClasspath.get().joinToString(" ") { it.name }
+            )
+          )
+        }
+    }
 }
 
 ktlint {
@@ -88,4 +106,78 @@ tasks.withType<DependencyUpdatesTask> {
     rejectVersionIf {
         isNonStable(candidate.version)
     }
+}
+
+
+val sourcesJar by tasks.creating(Jar::class) {
+  archiveClassifier.set("sources")
+  from(sourceSets.getByName("main").allSource)
+  from("LICENSE") {
+    into("META-INF")
+  }
+}
+
+val dokkaJavadocJar by tasks.creating(Jar::class) {
+  dependsOn(tasks.dokkaJavadoc)
+  from(tasks.dokkaJavadoc.get().outputDirectory)
+  archiveClassifier.set("javadoc")
+}
+
+// publication
+
+val artifactName = rootProject.name
+val artifactGroup = project.group.toString()
+val artifactVersion = project.version.toString()
+
+val pomUrl = "https://github.com/jejking/kosmparser"
+val pomScmUrl = "https://github.com/jejking/kosmparser"
+val pomIssueUrl = "https://github.com/jejking/kosmparser/issues"
+val pomDesc = "Asynchronous streaming parser for OSM XML"
+
+val githubRepo = "jejking/kosmparser"
+val githubReadme = "README.md"
+
+val pomLicenseName = "Apache 2.0"
+val pomLicenseUrl = "https://www.apache.org/licenses/LICENSE-2.0"
+val pomLicenseDist = "repo"
+
+val pomDeveloperId = "jejking"
+val pomDeveloperName = "John King"
+
+publishing {
+  publications {
+    create<MavenPublication>("kosmparser") {
+      groupId = artifactGroup
+      artifactId = artifactName
+      version = artifactVersion
+      from(components["java"])
+      artifact(sourcesJar)
+      artifact(dokkaJavadocJar)
+
+      pom {
+        packaging = "jar"
+        name.set(rootProject.name)
+        description.set(pomDesc)
+        url.set(pomUrl)
+        scm {
+          url.set(pomScmUrl)
+        }
+        issueManagement {
+          url.set(pomIssueUrl)
+        }
+        licenses {
+          license {
+            name.set(pomLicenseName)
+            url.set(pomLicenseUrl)
+          }
+        }
+        developers {
+          developer {
+            id.set(pomDeveloperId)
+            name.set(pomDeveloperName)
+          }
+        }
+      }
+    }
+  }
 }
