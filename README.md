@@ -1,5 +1,7 @@
 # kosmparser
 
+![Java CI with Gradle](https://github.com/jejking/kosmparser/workflows/Java%20CI%20with%20Gradle/badge.svg)
+
 This is a simple implementation of an asynchronous streaming parser for the [Open Street Map XML Format](https://wiki.openstreetmap.org/wiki/OSM_XML) to make it easier to work with in Kotlin. Support is limited to the XML export format - i.e. it doesn't yet look at things like changesets and the like. Likewise unsupported are exports in Protocol Buffer Format (pbf), etc.
 
 ## Data Model
