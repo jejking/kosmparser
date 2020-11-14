@@ -76,13 +76,13 @@ tasks {
         archiveBaseName.set(rootProject.name)
 
         manifest {
-          attributes(
-            mapOf(
-              "Implementation-Title" to project.name,
-              "Implementation-Version" to project.version,
-              "Class-Path" to configurations.compileClasspath.get().joinToString(" ") { it.name }
+            attributes(
+                mapOf(
+                    "Implementation-Title" to project.name,
+                    "Implementation-Version" to project.version,
+                    "Class-Path" to configurations.compileClasspath.get().joinToString(" ") { it.name }
+                )
             )
-          )
         }
     }
 }
@@ -108,19 +108,18 @@ tasks.withType<DependencyUpdatesTask> {
     }
 }
 
-
 val sourcesJar by tasks.creating(Jar::class) {
-  archiveClassifier.set("sources")
-  from(sourceSets.getByName("main").allSource)
-  from("LICENSE") {
-    into("META-INF")
-  }
+    archiveClassifier.set("sources")
+    from(sourceSets.getByName("main").allSource)
+    from("LICENSE") {
+        into("META-INF")
+    }
 }
 
 val dokkaJavadocJar by tasks.creating(Jar::class) {
-  dependsOn(tasks.dokkaJavadoc)
-  from(tasks.dokkaJavadoc.get().outputDirectory)
-  archiveClassifier.set("javadoc")
+    dependsOn(tasks.dokkaJavadoc)
+    from(tasks.dokkaJavadoc.get().outputDirectory)
+    archiveClassifier.set("javadoc")
 }
 
 // publication
@@ -145,39 +144,39 @@ val pomDeveloperId = "jejking"
 val pomDeveloperName = "John King"
 
 publishing {
-  publications {
-    create<MavenPublication>("kosmparser") {
-      groupId = artifactGroup
-      artifactId = artifactName
-      version = artifactVersion
-      from(components["java"])
-      artifact(sourcesJar)
-      artifact(dokkaJavadocJar)
+    publications {
+        create<MavenPublication>("kosmparser") {
+            groupId = artifactGroup
+            artifactId = artifactName
+            version = artifactVersion
+            from(components["java"])
+            artifact(sourcesJar)
+            artifact(dokkaJavadocJar)
 
-      pom {
-        packaging = "jar"
-        name.set(rootProject.name)
-        description.set(pomDesc)
-        url.set(pomUrl)
-        scm {
-          url.set(pomScmUrl)
+            pom {
+                packaging = "jar"
+                name.set(rootProject.name)
+                description.set(pomDesc)
+                url.set(pomUrl)
+                scm {
+                    url.set(pomScmUrl)
+                }
+                issueManagement {
+                    url.set(pomIssueUrl)
+                }
+                licenses {
+                    license {
+                        name.set(pomLicenseName)
+                        url.set(pomLicenseUrl)
+                    }
+                }
+                developers {
+                    developer {
+                        id.set(pomDeveloperId)
+                        name.set(pomDeveloperName)
+                    }
+                }
+            }
         }
-        issueManagement {
-          url.set(pomIssueUrl)
-        }
-        licenses {
-          license {
-            name.set(pomLicenseName)
-            url.set(pomLicenseUrl)
-          }
-        }
-        developers {
-          developer {
-            id.set(pomDeveloperId)
-            name.set(pomDeveloperName)
-          }
-        }
-      }
     }
-  }
 }
