@@ -1,4 +1,5 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+import java.net.URI
 
 val detektVersion = "1.9.1"
 val junitJupiterVersion = "5.7.0"
@@ -176,6 +177,16 @@ publishing {
                         name.set(pomDeveloperName)
                     }
                 }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = URI.create("https://maven.pkg.github.com/jejking/kosmparser")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
             }
         }
     }
