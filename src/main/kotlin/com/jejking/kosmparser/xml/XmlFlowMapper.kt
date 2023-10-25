@@ -92,7 +92,7 @@ object XmlFlowMapper {
   }
 
   private fun startElement(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): StartElement {
-    val attributes = (0 until parser.attributeCount).map { it ->
+    val attributes = (0 until parser.attributeCount).map {
       Pair(parser.getAttributeLocalName(it), parser.getAttributeValue(it))
     }.toMap()
     return StartElement(parser.localName, attributes)

@@ -22,6 +22,7 @@ import java.time.Month
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
+@Suppress("LargeClass")
 class OsmParserStateTest : FunSpec() {
 
   init {
