@@ -30,19 +30,19 @@ class URIFlowTest : StringSpec() {
     .version(HttpClient.Version.HTTP_2)
     .build()
 
-  override fun beforeSpec(spec: Spec) {
+  override suspend fun beforeSpec(spec: Spec) {
     super.beforeSpec(spec)
     wireMockServer = WireMockServer(port)
     wireMockServer.start()
     wiremock = WireMock(port)
   }
 
-  override fun afterSpec(spec: Spec) {
+  override suspend fun afterSpec(spec: Spec) {
     super.afterSpec(spec)
     wireMockServer.stop()
   }
 
-  override fun beforeTest(testCase: TestCase) {
+  override suspend fun beforeTest(testCase: TestCase) {
     super.beforeTest(testCase)
     wireMockServer.resetAll()
   }
