@@ -1,4 +1,5 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("jvm")
@@ -16,7 +17,7 @@ val wiremockVersion: String by project
 val reactiveStreamsVersion: String by project
 
 project.group = "com.jejking"
-project.version = "0.0.1"
+project.version = "0.0.2"
 
 repositories {
     mavenCentral()
@@ -24,10 +25,10 @@ repositories {
 
 kotlin {
     jvmToolchain(17)
+    compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoRoutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinxCoRoutinesVersion")
     implementation("org.reactivestreams:reactive-streams:$reactiveStreamsVersion")
@@ -45,19 +46,19 @@ tasks {
         useJUnitPlatform()
     }
 
-    // withType<Jar> {
-    //     archiveBaseName.set(rootProject.name)
+     withType<Jar> {
+         archiveBaseName.set(rootProject.name)
 
-    //     manifest {
-    //         attributes(
-    //             mapOf(
-    //                 "Implementation-Title" to project.name,
-    //                 "Implementation-Version" to project.version,
-    //                 "Class-Path" to configurations.compileClasspath.get().joinToString(" ") { it.name }
-    //             )
-    //         )
-    //     }
-    // }
+         manifest {
+             attributes(
+                 mapOf(
+                     "Implementation-Title" to project.name,
+                     "Implementation-Version" to project.version,
+                     "Class-Path" to configurations.compileClasspath.get().joinToString(" ") { it.name }
+                 )
+             )
+         }
+     }
 }
 
 
@@ -78,19 +79,31 @@ tasks.withType<DependencyUpdatesTask> {
     }
 }
 
-// val sourcesJar by tasks.creating(Jar::class) {
-//     archiveClassifier.set("sources")
-//     from(sourceSets.getByName("main").allSource)
-//     from("LICENSE") {
-//         into("META-INF")
-//     }
-// }
+tasks.kotlinSourcesJar() {
+    from("LICENSE") {
+        into("META-INF")
+    }
+    manifest {
+        attributes(
+            mapOf(
+                "Implementation-Title" to project.name,
+                "Implementation-Version" to project.version,
+            )
+        )
+    }
+}
 
-// val dokkaJavadocJar by tasks.creating(Jar::class) {
-//     dependsOn(tasks.dokkaJavadoc)
-//     from(tasks.dokkaJavadoc.get().outputDirectory)
-//     archiveClassifier.set("javadoc")
-// }
+tasks.register<Jar>("dokkaHtmlJar") {
+    dependsOn(tasks.dokkaHtml)
+    from(tasks.dokkaHtml.flatMap { it.outputDirectory })
+    archiveClassifier.set("html-docs")
+}
+
+tasks.register<Jar>("dokkaJavadocJar") {
+    dependsOn(tasks.dokkaJavadoc)
+    from(tasks.dokkaJavadoc.flatMap { it.outputDirectory })
+    archiveClassifier.set("javadoc")
+}
 
 // publication
 
