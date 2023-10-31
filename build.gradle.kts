@@ -1,5 +1,6 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.net.URI
 
 plugins {
     kotlin("jvm")
@@ -7,6 +8,7 @@ plugins {
     id("com.github.ben-manes.versions")
     id("com.adarshr.test-logger")
     id("org.jetbrains.dokka")
+    `maven-publish`
 }
 
 val kotlinVersion: String by project
@@ -79,7 +81,7 @@ tasks.withType<DependencyUpdatesTask> {
     }
 }
 
-tasks.kotlinSourcesJar() {
+tasks.kotlinSourcesJar {
     from("LICENSE") {
         into("META-INF")
     }
@@ -107,69 +109,69 @@ tasks.register<Jar>("dokkaJavadocJar") {
 
 // publication
 
-// val artifactName = rootProject.name
-// val artifactGroup = project.group.toString()
-// val artifactVersion = project.version.toString()
+ val artifactName = rootProject.name
+ val artifactGroup = project.group.toString()
+ val artifactVersion = project.version.toString()
 
-// val pomUrl = "https://github.com/jejking/kosmparser"
-// val pomScmUrl = "https://github.com/jejking/kosmparser"
-// val pomIssueUrl = "https://github.com/jejking/kosmparser/issues"
-// val pomDesc = "Asynchronous streaming parser for OSM XML"
+ val pomUrl = "https://github.com/jejking/kosmparser"
+ val pomScmUrl = "https://github.com/jejking/kosmparser"
+ val pomIssueUrl = "https://github.com/jejking/kosmparser/issues"
+ val pomDesc = "Asynchronous streaming parser for OSM XML"
 
-// val githubRepo = "jejking/kosmparser"
-// val githubReadme = "README.md"
+ val githubRepo = "jejking/kosmparser"
+ val githubReadme = "README.md"
 
-// val pomLicenseName = "Apache 2.0"
-// val pomLicenseUrl = "https://www.apache.org/licenses/LICENSE-2.0"
-// val pomLicenseDist = "repo"
+ val pomLicenseName = "Apache 2.0"
+ val pomLicenseUrl = "https://www.apache.org/licenses/LICENSE-2.0"
+ val pomLicenseDist = "repo"
 
-// val pomDeveloperId = "jejking"
-// val pomDeveloperName = "John King"
+ val pomDeveloperId = "jejking"
+ val pomDeveloperName = "John King"
 
-// publishing {
-//     publications {
-//         create<MavenPublication>("kosmparser") {
-//             groupId = artifactGroup
-//             artifactId = artifactName
-//             version = artifactVersion
-//             from(components["java"])
-//             artifact(sourcesJar)
-//             artifact(dokkaJavadocJar)
+ publishing {
+     publications {
+         create<MavenPublication>("kosmparser") {
+             groupId = artifactGroup
+             artifactId = artifactName
+             version = artifactVersion
+             from(components["java"])
+             artifact(tasks.kotlinSourcesJar)
+             artifact(tasks["dokkaJavadocJar"])
 
-//             pom {
-//                 packaging = "jar"
-//                 name.set(rootProject.name)
-//                 description.set(pomDesc)
-//                 url.set(pomUrl)
-//                 scm {
-//                     url.set(pomScmUrl)
-//                 }
-//                 issueManagement {
-//                     url.set(pomIssueUrl)
-//                 }
-//                 licenses {
-//                     license {
-//                         name.set(pomLicenseName)
-//                         url.set(pomLicenseUrl)
-//                     }
-//                 }
-//                 developers {
-//                     developer {
-//                         id.set(pomDeveloperId)
-//                         name.set(pomDeveloperName)
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//     repositories {
-//         maven {
-//             name = "GitHubPackages"
-//             url = URI.create("https://maven.pkg.github.com/jejking/kosmparser")
-//             credentials {
-//                 username = System.getenv("GITHUB_ACTOR")
-//                 password = System.getenv("GITHUB_TOKEN")
-//             }
-//         }
-//     }
-// }
+             pom {
+                 packaging = "jar"
+                 name.set(rootProject.name)
+                 description.set(pomDesc)
+                 url.set(pomUrl)
+                 scm {
+                     url.set(pomScmUrl)
+                 }
+                 issueManagement {
+                     url.set(pomIssueUrl)
+                 }
+                 licenses {
+                     license {
+                         name.set(pomLicenseName)
+                         url.set(pomLicenseUrl)
+                     }
+                 }
+                 developers {
+                     developer {
+                         id.set(pomDeveloperId)
+                         name.set(pomDeveloperName)
+                     }
+                 }
+             }
+         }
+     }
+     repositories {
+         maven {
+             name = "GitHubPackages"
+             url = URI.create("https://maven.pkg.github.com/jejking/kosmparser")
+             credentials {
+                 username = System.getenv("GITHUB_ACTOR")
+                 password = System.getenv("GITHUB_TOKEN")
+             }
+         }
+     }
+ }
