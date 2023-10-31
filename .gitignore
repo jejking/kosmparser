@@ -43,3 +43,6 @@ gradle-app.setting
 .kotlintest/**
 
 .vscode/
+
+.DS_Store
+bin/
