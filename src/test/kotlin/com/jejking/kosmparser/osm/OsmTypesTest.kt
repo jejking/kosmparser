@@ -5,6 +5,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.numericDouble
 import io.kotest.property.arbitrary.numericDoubles
 import io.kotest.property.forAll
 import java.time.ZonedDateTime
@@ -25,8 +26,8 @@ class OsmTypesTest : FunSpec() {
         )
 
         val pointArb: Arb<Point> = arbitrary(edgeCases) { rs ->
-          val latitude = Arb.numericDoubles(-90.0, 90.0).sample(rs)
-          val longitude = Arb.numericDoubles(-180.0, 180.0).sample(rs)
+          val latitude = Arb.numericDouble(-90.0, 90.0).sample(rs)
+          val longitude = Arb.numericDouble(-180.0, 180.0).sample(rs)
           Point(latitude.value, longitude.value)
         }
 
