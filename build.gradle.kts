@@ -8,6 +8,7 @@ plugins {
     id("com.github.ben-manes.versions")
     id("com.adarshr.test-logger")
     id("org.jetbrains.dokka")
+    id("org.jetbrains.dokka-javadoc")
     `maven-publish`
 }
 
@@ -19,7 +20,7 @@ val wiremockVersion: String by project
 val reactiveStreamsVersion: String by project
 
 project.group = "com.jejking"
-project.version = "0.0.2"
+project.version = "0.0.3"
 
 repositories {
     mavenCentral()
@@ -96,14 +97,14 @@ tasks.kotlinSourcesJar {
 }
 
 tasks.register<Jar>("dokkaHtmlJar") {
-    dependsOn(tasks.dokkaHtml)
-    from(tasks.dokkaHtml.flatMap { it.outputDirectory })
+    dependsOn(tasks.dokkaGeneratePublicationHtml)
+    from(tasks.dokkaGeneratePublicationHtml.flatMap { it.outputDirectory })
     archiveClassifier.set("html-docs")
 }
 
 tasks.register<Jar>("dokkaJavadocJar") {
-    dependsOn(tasks.dokkaJavadoc)
-    from(tasks.dokkaJavadoc.flatMap { it.outputDirectory })
+    dependsOn(tasks.dokkaGeneratePublicationJavadoc)
+    from(tasks.dokkaGeneratePublicationJavadoc.flatMap { it.outputDirectory })
     archiveClassifier.set("javadoc")
 }
 
