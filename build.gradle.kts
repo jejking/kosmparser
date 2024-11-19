@@ -27,8 +27,8 @@ repositories {
 }
 
 kotlin {
-    jvmToolchain(17)
-    compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+    jvmToolchain(21)
+    compilerOptions.jvmTarget.set(JvmTarget.JVM_21)
 }
 
 dependencies {
