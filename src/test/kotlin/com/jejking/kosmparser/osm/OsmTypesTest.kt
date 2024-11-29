@@ -6,7 +6,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.numericDouble
-import io.kotest.property.arbitrary.numericDoubles
 import io.kotest.property.forAll
 import java.time.ZonedDateTime
 
@@ -31,7 +30,7 @@ class OsmTypesTest : FunSpec() {
           Point(latitude.value, longitude.value)
         }
 
-        forAll(pointArb) { p: Point -> LAT_RANGE.contains(p.lat) && LON_RANGE.contains(p.lon) }
+        forAll(pointArb) { p: Point -> Point.LAT_RANGE.contains(p.lat) && Point.LON_RANGE.contains(p.lon) }
       }
       test("should accept lat value of -90") {
         Point(-90.0, 0.0)

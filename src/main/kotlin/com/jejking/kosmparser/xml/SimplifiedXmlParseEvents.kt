@@ -9,10 +9,10 @@ import javax.xml.stream.XMLStreamConstants
 /**
  * Encapsulates a subset of XML Parse Events.
  */
-sealed class SimpleXmlParseEvent
+sealed interface SimpleXmlParseEvent
 
-sealed class TextEventSimpleXml : SimpleXmlParseEvent() {
-  abstract val text: String
+sealed interface TextEventSimpleXml : SimpleXmlParseEvent {
+  val text: String
 }
 
 /**
@@ -21,42 +21,46 @@ sealed class TextEventSimpleXml : SimpleXmlParseEvent() {
  * @see [XMLStreamConstants.START_ELEMENT]
  * @see [XMLStreamConstants.ATTRIBUTE]
  */
-data class StartElement(val localName: String, val attributes: Map<String, String> = emptyMap()) : SimpleXmlParseEvent()
+data class StartElement(val localName: String, val attributes: Map<String, String> = emptyMap()) : SimpleXmlParseEvent
 
 /**
  * End of an Element.
  *
  * @see [XMLStreamConstants.END_ELEMENT]
  */
-data class EndElement(val localName: String) : SimpleXmlParseEvent()
+@JvmInline
+value class EndElement(val localName: String) : SimpleXmlParseEvent
 
 /**
  * Processing Instruction.
  *
  * @see [XMLStreamConstants.PROCESSING_INSTRUCTION]
  */
-data class ProcessingInstruction(val target: String?, val data: String?) : SimpleXmlParseEvent()
+data class ProcessingInstruction(val target: String?, val data: String?) : SimpleXmlParseEvent
 
 /**
  * Characters.
  *
  * @see [XMLStreamConstants.CHARACTERS]
  */
-data class Characters(override val text: String) : TextEventSimpleXml()
+@JvmInline
+value class Characters(override val text: String) : TextEventSimpleXml
 
 /**
  * Comment.
  *
  * @see [XMLStreamConstants.COMMENT]
  */
-data class Comment(val text: String) : SimpleXmlParseEvent()
+@JvmInline
+value class Comment(override val text: String) : TextEventSimpleXml
 
 /**
  * Space (ignorable whitespace).
  *
  * @see [XMLStreamConstants.SPACE]
  */
-data class Space(val text: String) : SimpleXmlParseEvent()
+@JvmInline
+value class Space(override val text: String) : TextEventSimpleXml
 
 /**
  * Start of document.
@@ -67,18 +71,19 @@ data class StartDocument(
   val systemId: String,
   val characterEncodingScheme: String,
   val isStandalone: Boolean
-) : SimpleXmlParseEvent()
+) : SimpleXmlParseEvent
 
 /**
  * End of document.
  *
  * @see [XMLStreamConstants.END_DOCUMENT]
  */
-object EndDocument : SimpleXmlParseEvent()
+object EndDocument : SimpleXmlParseEvent
 
 /**
  * Characters data.
  *
  * @see [XMLStreamConstants.CDATA]
  */
-data class CData(override val text: String) : TextEventSimpleXml()
+@JvmInline
+value class CData(override val text: String) : TextEventSimpleXml

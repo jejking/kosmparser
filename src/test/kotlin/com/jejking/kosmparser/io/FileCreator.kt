@@ -15,22 +15,22 @@ import kotlin.coroutines.suspendCoroutine
  */
 object FileCreator {
 
-  const val bufferSize = 256
+  const val BUFFER_SIZE = 256
 
   @JvmStatic
   fun main(args: Array<String>) {
-    val path = Paths.get(this.javaClass.getResource("/testfile1.bin").toURI())
+    val path = Paths.get(this.javaClass.getResource("/testfile1.bin")!!.toURI())
     val channel = AsynchronousFileChannel.open(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
-    val buffer = ByteBuffer.allocate(bufferSize)
+    val buffer = ByteBuffer.allocate(BUFFER_SIZE)
 
     // write four discrete full buffers of 0, 1, 2, 3, and 4
     for (i in 0..4) {
       fillBuffer(buffer, i.toByte())
-      runBlocking { writeBuffer(i * bufferSize, buffer, channel) }
+      runBlocking { writeBuffer(i * BUFFER_SIZE, buffer, channel) }
     }
     val buffer2 = ByteBuffer.allocate(128)
     fillBuffer(buffer2, 5)
-    runBlocking { writeBuffer(bufferSize * 5, buffer2, channel) }
+    runBlocking { writeBuffer(BUFFER_SIZE * 5, buffer2, channel) }
     channel.close()
     println("done")
   }

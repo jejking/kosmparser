@@ -2,9 +2,7 @@ package com.jejking.kosmparser.io
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.take
@@ -15,7 +13,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 
-@ExperimentalCoroutinesApi
+@kotlinx.coroutines.ExperimentalCoroutinesApi
 class AsynchronousFileChannelFlowTest : FunSpec() {
 
   val testFilePath = Paths.get(this.javaClass.getResource("/testfile1.bin").toURI())

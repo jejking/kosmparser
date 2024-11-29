@@ -5,11 +5,11 @@ import com.jejking.kosmparser.osm.OsmFlowMapper.toOsmDataFlow
 import com.jejking.kosmparser.util.getPath
 import com.jejking.kosmparser.util.openFileChannel
 import com.jejking.kosmparser.xml.SimpleXmlParseEvent
+import com.jejking.kosmparser.xml.XmlFlowMapper.coalesceText
 import com.jejking.kosmparser.xml.XmlFlowMapper.toParseEvents
 import com.jejking.kosmparser.xml.XmlFlowTools.toParseEventFlow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.filter
@@ -20,7 +20,7 @@ import java.time.Month
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
-@ExperimentalCoroutinesApi
+@kotlinx.coroutines.ExperimentalCoroutinesApi
 class OsmFlowMapperTest : FunSpec() {
 
   init {

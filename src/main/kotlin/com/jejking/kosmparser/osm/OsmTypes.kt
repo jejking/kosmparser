@@ -3,14 +3,6 @@ package com.jejking.kosmparser.osm
 import kotlinx.coroutines.flow.Flow
 import java.time.ZonedDateTime
 
-const val MIN_LAT = -90.0
-const val MAX_LAT = 90.0
-const val MIN_LON = -180.0
-const val MAX_LON = 180.0
-
-val LAT_RANGE = MIN_LAT.rangeTo(MAX_LAT)
-val LON_RANGE = MIN_LON.rangeTo(MAX_LON)
-
 /**
  * Represents a point on the Earth's surface using the WGS84 projection.
  *
@@ -22,6 +14,16 @@ data class Point(val lat: Double, val lon: Double) {
   init {
     check(LAT_RANGE.contains(lat)) { "$lat out of range (-90, 90)" }
     check(LON_RANGE.contains(lon)) { "$lon out of range (-180, 180)" }
+  }
+
+  companion object {
+    const val MIN_LAT = -90.0
+    const val MAX_LAT = 90.0
+    const val MIN_LON = -180.0
+    const val MAX_LON = 180.0
+
+    val LAT_RANGE = MIN_LAT.rangeTo(MAX_LAT)
+    val LON_RANGE = MIN_LON.rangeTo(MAX_LON)
   }
 }
 
@@ -86,8 +88,7 @@ data class Node(
   val point: Point
 ) : Element()
 
-const val MAX_NODES_IN_WAY = 2000
-const val MIN_NODES_IN_WAY = 2
+
 
 /**
  * Represents an [OSM Way](https://wiki.openstreetmap.org/wiki/Way). It would normally have
@@ -119,6 +120,11 @@ data class Way(
    * last identifier are the same. Note - a faulty way is not considered closed.
    */
   fun isClosed(): Boolean = !isFaulty() && nds.first() == nds.last()
+
+  companion object {
+    const val MAX_NODES_IN_WAY = 2000
+    const val MIN_NODES_IN_WAY = 2
+  }
 }
 
 /**

@@ -66,7 +66,6 @@ class URIFlowTest : StringSpec() {
         val actualResponse = uri.asFlow(httpClient)
           .map { String(it) }
           .reduce { accumulator, value -> accumulator + value }
-
         actualResponse shouldBe response
       }
     }
@@ -85,7 +84,7 @@ class URIFlowTest : StringSpec() {
       val flow = URI.create("$baseUri/400").asFlow(httpClient)
       runBlocking {
         shouldThrow<IOException> {
-          flow.collect({ })
+          flow.collect { }
         }
       }
     }
@@ -116,7 +115,7 @@ class URIFlowTest : StringSpec() {
 
       uris.forEach {
         shouldThrow<IllegalStateException> {
-          it.asFlow(httpClient)
+          it.asFlow(httpClient).collect()
         }
       }
     }

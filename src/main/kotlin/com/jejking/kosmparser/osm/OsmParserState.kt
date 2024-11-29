@@ -35,11 +35,10 @@ import java.time.ZonedDateTime
  *
  * end osm element
  */
-@Suppress("UseCheckOrError")
-internal sealed class ParserState {
+internal sealed interface ParserState {
   fun accept(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
-      is Characters -> handleCharacters(xmlparseEventSimpleXml)
+      is Characters -> this to null
       is Space -> this to null
       is Comment -> this to null
       is ProcessingInstruction -> this to null
@@ -48,19 +47,10 @@ internal sealed class ParserState {
     }
   }
 
-  private fun handleCharacters(characters: Characters): Pair<ParserState, OsmData?> {
-    if (characters.text.trim().isEmpty()) {
-      return this to null
-    } else {
-      throw IllegalStateException("Unexpected characters: $characters")
-    }
-  }
-
-  abstract fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?>
+  fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?>
 }
 
-@Suppress("UseCheckOrError")
-internal object ReadingOsmMetadata : ParserState() {
+internal object ReadingOsmMetadata : ParserState {
 
   override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
@@ -68,21 +58,21 @@ internal object ReadingOsmMetadata : ParserState() {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
       is EndDocument -> Finished to null
-      else -> throw IllegalStateException("Unexpected parse event")
+      else -> unexpectedParseEvent(xmlparseEventSimpleXml)
     }
   }
 
   private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
     return when (endElement.localName) {
       "osm" -> this to null
-      else -> throw IllegalStateException("Unexpected parse event")
+      else -> unexpectedEndElement(endElement)
     }
   }
 
   private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
     return when (startElement.localName) {
       "osm" -> readOsmElement(startElement)
-      else -> throw IllegalStateException("Got unexpected start element ${startElement.localName}")
+      else -> unexpectedStartElement(startElement)
     }
   }
 
@@ -93,20 +83,19 @@ internal object ReadingOsmMetadata : ParserState() {
   }
 }
 
-@Suppress("UseCheckOrError")
-internal class ReadingBounds(val apiVersion: String?, val generator: String?) : ParserState() {
+internal class ReadingBounds(val apiVersion: String?, val generator: String?) : ParserState {
   override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> ReadingNodes() to null
-      else -> throw IllegalStateException("Got unexpected element $xmlparseEventSimpleXml")
+      else -> unexpectedParseEvent(xmlparseEventSimpleXml)
     }
   }
 
   private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
     return when (startElement.localName) {
       "bounds" -> readBoundsElement(startElement)
-      else -> throw IllegalStateException("Got unexpected start element ${startElement.localName}")
+      else -> unexpectedStartElement(startElement)
     }
   }
 
@@ -126,8 +115,7 @@ internal class ReadingBounds(val apiVersion: String?, val generator: String?) : 
   }
 }
 
-@Suppress("UseCheckOrError")
-internal class ReadingTags(private val tagReceiver: TagReceiver) : ParserState() {
+internal class ReadingTags(private val tagReceiver: TagReceiver) : ParserState {
 
   private val tagHolder = mutableMapOf<String, String>()
 
@@ -136,7 +124,7 @@ internal class ReadingTags(private val tagReceiver: TagReceiver) : ParserState()
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
       is Characters -> this to null
-      else -> throw IllegalStateException("Unexpected parse event")
+      else -> unexpectedParseEvent(xmlparseEventSimpleXml)
     }
   }
 
@@ -155,7 +143,7 @@ internal class ReadingTags(private val tagReceiver: TagReceiver) : ParserState()
   private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
     return when (startElement.localName) {
       "tag" -> readTag(startElement)
-      else -> throw IllegalStateException("Got unexpected start element ${startElement.localName}")
+      else -> unexpectedStartElement(startElement)
     }
   }
 
@@ -167,7 +155,7 @@ internal class ReadingTags(private val tagReceiver: TagReceiver) : ParserState()
   }
 }
 
-internal abstract class TagReceiver : ParserState() {
+internal abstract class TagReceiver : ParserState {
 
   protected var tags: Map<String, String> = mapOf()
 
@@ -176,7 +164,6 @@ internal abstract class TagReceiver : ParserState() {
   }
 }
 
-@Suppress("UseCheckOrError")
 internal class ReadingNodes : TagReceiver() {
 
   private lateinit var elementMetadata: ElementMetadata
@@ -187,10 +174,11 @@ internal class ReadingNodes : TagReceiver() {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
       is Characters -> this to null
-      else -> throw IllegalStateException("Got unexpected parse event: $xmlparseEventSimpleXml")
+      else -> unexpectedParseEvent(xmlparseEventSimpleXml)
     }
   }
 
+  @Suppress("RemoveRedundantQualifierName")
   private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
     return when (endElement.localName) {
       "node" -> {
@@ -199,7 +187,7 @@ internal class ReadingNodes : TagReceiver() {
       }
       // could theoretically come if we have no way or relation elements
       "osm" -> ReadingOsmMetadata.accept(endElement)
-      else -> throw IllegalStateException("Got unexpected end element ${endElement.localName}")
+      else -> unexpectedEndElement(endElement)
     }
   }
 
@@ -208,7 +196,7 @@ internal class ReadingNodes : TagReceiver() {
       "node" -> readNodeElement(startElement)
       "way" -> ReadingWays().accept(startElement)
       "relation" -> ReadingRelations().accept(startElement)
-      else -> throw IllegalStateException("Got unexpected start element ${startElement.localName}")
+      else -> unexpectedStartElement(startElement)
     }
   }
 
@@ -222,8 +210,7 @@ internal class ReadingNodes : TagReceiver() {
   }
 }
 
-@Suppress("UseCheckOrError")
-internal class ReadingNds(private val readingWays: ReadingWays) : ParserState() {
+internal class ReadingNds(private val readingWays: ReadingWays) : ParserState {
 
   private val ndRefs = mutableListOf<Long>()
 
@@ -231,7 +218,7 @@ internal class ReadingNds(private val readingWays: ReadingWays) : ParserState() 
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
-      else -> throw IllegalStateException("Unexpected parse event")
+      else -> unexpectedParseEvent(xmlparseEventSimpleXml)
     }
   }
 
@@ -252,7 +239,7 @@ internal class ReadingNds(private val readingWays: ReadingWays) : ParserState() 
       ndRefs.add(ndRef)
       return this to null
     } catch (nfe: NumberFormatException) {
-      throw IllegalStateException(nfe)
+      error(nfe)
     }
   }
 
@@ -263,12 +250,11 @@ internal class ReadingNds(private val readingWays: ReadingWays) : ParserState() 
         readingWays.acceptNdRefs(this.ndRefs.toList())
         readingWays.accept(endElement)
       }
-      else -> throw IllegalStateException("Unexpected parse event")
+      else -> unexpectedEndElement(endElement)
     }
   }
 }
 
-@Suppress("UseCheckOrError")
 internal class ReadingWays : TagReceiver() {
 
   private lateinit var elementMetadata: ElementMetadata
@@ -278,7 +264,7 @@ internal class ReadingWays : TagReceiver() {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
-      else -> throw IllegalStateException("Unexpected parse event")
+      else -> unexpectedParseEvent(xmlparseEventSimpleXml)
     }
   }
 
@@ -286,6 +272,7 @@ internal class ReadingWays : TagReceiver() {
     this.ndRefs = ndRefs
   }
 
+  @Suppress("RemoveRedundantQualifierName")
   private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
     return when (endElement.localName) {
       "way" -> {
@@ -294,7 +281,7 @@ internal class ReadingWays : TagReceiver() {
       }
       // could theoretically come if we have no relation elements
       "osm" -> ReadingOsmMetadata.accept(endElement)
-      else -> throw IllegalStateException("Got unexpected end element ${endElement.localName}")
+      else -> unexpectedEndElement(endElement)
     }
   }
 
@@ -302,7 +289,7 @@ internal class ReadingWays : TagReceiver() {
     return when (startElement.localName) {
       "way" -> readWayElement(startElement)
       "relation" -> ReadingRelations().accept(startElement)
-      else -> throw IllegalStateException("Got unexpected start element ${startElement.localName}")
+      else -> unexpectedStartElement(startElement)
     }
   }
 
@@ -312,8 +299,7 @@ internal class ReadingWays : TagReceiver() {
   }
 }
 
-@Suppress("UseCheckOrError")
-internal class ReadingMembers(private val readingRelations: ReadingRelations) : ParserState() {
+internal class ReadingMembers(private val readingRelations: ReadingRelations) : ParserState {
 
   private val members = mutableListOf<Member>()
 
@@ -321,7 +307,7 @@ internal class ReadingMembers(private val readingRelations: ReadingRelations) : 
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
-      else -> throw IllegalStateException("Unexpected parse event")
+      else -> unexpectedParseEvent(xmlparseEventSimpleXml)
     }
   }
 
@@ -332,7 +318,7 @@ internal class ReadingMembers(private val readingRelations: ReadingRelations) : 
         readingRelations.acceptMembers(this.members.toList())
         readingRelations.accept(endElement)
       }
-      else -> throw IllegalStateException("Unexpected parse event")
+      else -> unexpectedEndElement(endElement)
     }
   }
 
@@ -356,7 +342,7 @@ internal class ReadingMembers(private val readingRelations: ReadingRelations) : 
     val ref = try {
       refString.toLong()
     } catch (nfe: NumberFormatException) {
-      throw IllegalStateException(nfe)
+      error(nfe)
     }
     val role = roleString.let { if (it.isBlank()) null else it }
     this.members.add(Member(type, ref, role))
@@ -368,11 +354,11 @@ internal class ReadingMembers(private val readingRelations: ReadingRelations) : 
       "node" -> MemberType.NODE
       "way" -> MemberType.WAY
       "relation" -> MemberType.RELATION
-      else -> throw IllegalStateException("unknown member type $typeString")
+      else -> error("unknown member type $typeString")
     }
   }
 }
-@Suppress("UseCheckOrError")
+
 internal class ReadingRelations : TagReceiver() {
 
   private lateinit var elementMetadata: ElementMetadata
@@ -382,10 +368,11 @@ internal class ReadingRelations : TagReceiver() {
     return when (xmlparseEventSimpleXml) {
       is StartElement -> readStartElement(xmlparseEventSimpleXml)
       is EndElement -> readEndElement(xmlparseEventSimpleXml)
-      else -> throw IllegalStateException("Unexpected parse event")
+      else -> unexpectedParseEvent(xmlparseEventSimpleXml)
     }
   }
 
+  @Suppress("RemoveRedundantQualifierName")
   private fun readEndElement(endElement: EndElement): Pair<ParserState, OsmData?> {
     return when (endElement.localName) {
       "relation" -> {
@@ -393,14 +380,14 @@ internal class ReadingRelations : TagReceiver() {
         return ReadingRelations() to relation
       }
       "osm" -> ReadingOsmMetadata.accept(endElement)
-      else -> throw IllegalStateException("Got unexpected end element ${endElement.localName}")
+      else -> unexpectedEndElement(endElement)
     }
   }
 
   private fun readStartElement(startElement: StartElement): Pair<ParserState, OsmData?> {
     return when (startElement.localName) {
       "relation" -> readRelationElement(startElement)
-      else -> throw IllegalStateException("Got unexpected start element ${startElement.localName}")
+      else -> unexpectedStartElement(startElement)
     }
   }
 
@@ -414,7 +401,7 @@ internal class ReadingRelations : TagReceiver() {
   }
 }
 
-internal object Finished : ParserState() {
+internal object Finished : ParserState {
   override fun handleParseEvents(xmlparseEventSimpleXml: SimpleXmlParseEvent): Pair<ParserState, OsmData?> {
     return this to null
   }
@@ -442,5 +429,17 @@ fun readElementMetadata(startElement: StartElement): ElementMetadata {
     changeSet = changeSet
   )
 }
-@Suppress("UseCheckOrError")
-fun Map<String, String>.getOrThrow(key: String): String = this[key] ?: throw IllegalStateException("Missing key $key")
+
+fun Map<String, String>.getOrThrow(key: String): String = this[key] ?: error("Missing key $key")
+
+private fun unexpectedParseEvent(xmlparseEventSimpleXml: SimpleXmlParseEvent): Nothing {
+  error("Unexpected parse event: $xmlparseEventSimpleXml")
+}
+
+private fun unexpectedEndElement(endElement: EndElement): Nothing {
+  error("Unexpected end element: ${endElement.localName}")
+}
+
+private fun unexpectedStartElement(startElement: StartElement): Nothing {
+  error("Unexpected start element: ${startElement.localName}")
+}

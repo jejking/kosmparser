@@ -4,7 +4,6 @@ import com.jejking.kosmparser.io.asFlow
 import com.jejking.kosmparser.io.openAsynchronousFileChannelForRead
 import com.jejking.kosmparser.xml.SimpleXmlParseEvent
 import com.jejking.kosmparser.xml.XmlFlowMapper.toParseEvents
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.transform
@@ -13,7 +12,7 @@ import java.net.http.HttpClient
 import java.nio.channels.AsynchronousFileChannel
 import java.nio.file.Path
 
-@ExperimentalCoroutinesApi
+@kotlinx.coroutines.ExperimentalCoroutinesApi
 object OsmFlowMapper {
 
   /**

@@ -43,6 +43,15 @@ suspend fun AsynchronousFileChannel.aRead(offset: Long, buf: ByteBuffer): Int =
  * @param bufferSize bufferSize to allocate, must be positive
  */
 fun AsynchronousFileChannel.asFlow(bufferSize: Int = 1024): Flow<ByteArray> = flow {
+
+  fun readBufferToArray(byteBuffer: ByteBuffer, bytesRead: Int): ByteArray {
+    val targetArray = ByteArray(bytesRead)
+    byteBuffer.rewind()
+    byteBuffer.get(targetArray)
+    byteBuffer.clear()
+    return targetArray
+  }
+
   var offset = 0L
   val buffer = ByteBuffer.allocate(bufferSize)
   var bytesRead = aRead(offset, buffer)
@@ -52,14 +61,6 @@ fun AsynchronousFileChannel.asFlow(bufferSize: Int = 1024): Flow<ByteArray> = fl
     offset += bytesRead
     bytesRead = aRead(offset, buffer)
   }
-}
-
-fun readBufferToArray(byteBuffer: ByteBuffer, bytesRead: Int): ByteArray {
-  val targetArray = ByteArray(bytesRead)
-  byteBuffer.rewind()
-  byteBuffer.get(targetArray)
-  byteBuffer.clear()
-  return targetArray
 }
 
 fun Path.openAsynchronousFileChannelForRead() = AsynchronousFileChannel.open(this, StandardOpenOption.READ)

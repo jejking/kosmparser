@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
 @ExperimentalCoroutinesApi
-@ExperimentalStdlibApi
 class XmlFlowMapperTest : FunSpec() {
 
   init {
@@ -108,8 +107,7 @@ class XmlFlowMapperTest : FunSpec() {
         }
       }
 
-      // ignorable white space depends on validation, so we should ignore it
-      test("should emit space as characters") {
+      test("should emit space between elements as characters") {
         val xml = "<myxml>  <anotherElement/></myxml>"
         val parseEventFlow = toParseEventFlow(xml)
         runBlocking {
@@ -181,6 +179,16 @@ class XmlFlowMapperTest : FunSpec() {
         runBlocking {
           val parseEvent = parseEventFlow.filter { it is CData }.first()
           parseEvent shouldBe CData(" some cdata ")
+        }
+      }
+
+      test("text between element tags should be coalesced") {
+        val xml1 = """<myxml><tag>abc"""
+        val xml2 = """def</tag></myxml>"""
+        val parseEventFlow = toCoalescingParseEventFlow(xml1, xml2)
+        runBlocking {
+          val parseEvent = parseEventFlow.filter { it is Characters }.first()
+          parseEvent shouldBe Characters("abcdef")
         }
       }
     }

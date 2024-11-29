@@ -38,10 +38,8 @@ class OsmParserStateTest : FunSpec() {
         ).forEach { ReadingOsmMetadata.accept(it) shouldBe (ReadingOsmMetadata to null) }
       }
 
-      test("should throw exception if characters cannot be trimmed to empty string") {
-        shouldThrow<java.lang.IllegalStateException> {
-          ReadingOsmMetadata.accept(Characters("foo"))
-        }
+      test("should ignore characters") {
+        ReadingOsmMetadata.accept(Characters("foo")) shouldBe (ReadingOsmMetadata to null)
       }
 
       test("should ignore comment") {

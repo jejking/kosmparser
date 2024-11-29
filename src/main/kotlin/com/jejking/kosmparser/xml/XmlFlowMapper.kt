@@ -11,9 +11,11 @@ import javax.xml.stream.XMLStreamConstants
 object XmlFlowMapper {
 
   /**
-   * Creates a Flow of ParseEvents from the underlying flow of byte arrays.
+   * Creates a Flow of ParseEvents from an underlying flow of byte arrays.
    *
-   * Note that the flow created does not coalesce text.
+   * Note that the flow created does not coalesce text. An additional utility function is provided for this,
+   * but as OSM XML does not contain useful text outside of attributes which are parsed fully, this
+   * function is sufficient in itself.
    */
   @kotlinx.coroutines.ExperimentalCoroutinesApi
   fun toParseEvents(byteArrayFlow: Flow<ByteArray>): Flow<SimpleXmlParseEvent> {
@@ -24,7 +26,6 @@ object XmlFlowMapper {
       parser.inputFeeder.feedInput(it, 0, it.size)
       var next = parser.next()
       while (next != AsyncXMLStreamReader.EVENT_INCOMPLETE) {
-
         when (next) {
           XMLStreamConstants.START_DOCUMENT -> emit(startDocument(parser))
           XMLStreamConstants.START_ELEMENT -> emit(startElement(parser))
@@ -43,6 +44,12 @@ object XmlFlowMapper {
     }
   }
 
+  /**
+   * Coalesces text elements together if they follow each other in the flow. This can be useful
+   * to simplify subsequent processing.
+   *
+   * This function is provided to improve the general utility of the XML flow.
+   */
   fun Flow<SimpleXmlParseEvent>.coalesceText(): Flow<SimpleXmlParseEvent> {
 
     var textBuffer: StringBuilder = StringBuilder()
@@ -92,9 +99,9 @@ object XmlFlowMapper {
   }
 
   private fun startElement(parser: AsyncXMLStreamReader<AsyncByteArrayFeeder>): StartElement {
-    val attributes = (0 until parser.attributeCount).map {
+    val attributes = (0 until parser.attributeCount).associate {
       Pair(parser.getAttributeLocalName(it), parser.getAttributeValue(it))
-    }.toMap()
+    }
     return StartElement(parser.localName, attributes)
   }
 

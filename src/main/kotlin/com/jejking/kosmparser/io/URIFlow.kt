@@ -1,7 +1,8 @@
 package com.jejking.kosmparser.io
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.reactive.asFlow
 import org.reactivestreams.FlowAdapters.toPublisher
@@ -14,9 +15,8 @@ import java.nio.ByteBuffer
 import java.time.Duration
 import java.util.concurrent.Flow.Publisher
 
-val validSchemes = setOf("http", "https")
-
 const val DEFAULT_TIMEOUT_SECONDS = 10L
+const val HTTP_200_OK = 200
 
 /**
  * Extends URI to `GET` the content of the URI and expose the body of the response as [Flow] of [ByteArray].
@@ -36,24 +36,29 @@ fun URI.asFlow(
   timeout: Duration = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS)
 ): Flow<ByteArray> {
 
-  check(scheme in validSchemes)
   val theURI = this
 
   return flow {
+    check(schemeIsHttpOrHttps(theURI.scheme))
     val response = doGet(timeout, theURI, httpClient)
     checkStatusCode(response, theURI)
-
-    toPublisher(response.body()).asFlow().collect { byteBufferList ->
-      byteBufferList.forEach { byteBuffer ->
-        val target = ByteArray(byteBuffer.limit())
-        byteBuffer.get(target)
-        emit(target)
-      }
+    toPublisher(response.body())
+    .asFlow()
+    .flatMapConcat { bbl -> bbl.asFlow() }
+    .collect { bb ->
+      val target = ByteArray(bb.limit())
+      bb.get(target)
+      emit(target)
     }
   }
 }
 
-const val HTTP_200_OK = 200
+private fun schemeIsHttpOrHttps(scheme: String?): Boolean {
+  return when (scheme) {
+    "http", "https" -> true
+    else -> false
+  }
+}
 
 private fun checkStatusCode(response: HttpResponse<Publisher<List<ByteBuffer>>>, theURI: URI) {
   val statusCode = response.statusCode()
