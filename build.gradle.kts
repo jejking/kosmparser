@@ -3,21 +3,13 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.net.URI
 
 plugins {
-    kotlin("jvm")
-    id("io.gitlab.arturbosch.detekt")
-    id("com.github.ben-manes.versions")
-    id("com.adarshr.test-logger")
-    id("org.jetbrains.dokka")
-    id("org.jetbrains.dokka-javadoc")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.versions)
+    alias(libs.plugins.test.logger)
+    alias(libs.plugins.dokka)
     `maven-publish`
 }
-
-val kotlinVersion: String by project
-val kotestVersion: String by project
-val kotlinxCoRoutinesVersion: String by project
-val aaltoXmlVersion: String by project
-val wiremockVersion: String by project
-val reactiveStreamsVersion: String by project
 
 project.group = "com.jejking"
 project.version = "0.0.3"
@@ -27,21 +19,34 @@ repositories {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
     compilerOptions.jvmTarget.set(JvmTarget.JVM_21)
 }
 
-dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoRoutinesVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinxCoRoutinesVersion")
-    implementation("org.reactivestreams:reactive-streams:$reactiveStreamsVersion")
-    implementation("com.fasterxml:aalto-xml:$aaltoXmlVersion")
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
 
-    testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
-    testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
-    testImplementation("io.kotest:kotest-property:$kotestVersion")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$kotlinxCoRoutinesVersion")
-    testImplementation("org.wiremock:wiremock:$wiremockVersion")
+detekt {
+    toolVersion = libs.versions.detekt.get()
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    jvmTarget = "21"
+}
+
+dependencies {
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.reactive)
+    implementation(libs.reactive.streams)
+    implementation(libs.aalto.xml)
+
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.kotest.property)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.wiremock)
 }
 
 tasks {
@@ -96,17 +101,8 @@ tasks.kotlinSourcesJar {
     }
 }
 
-tasks.register<Jar>("dokkaHtmlJar") {
-    dependsOn(tasks.dokkaGeneratePublicationHtml)
-    from(tasks.dokkaGeneratePublicationHtml.flatMap { it.outputDirectory })
-    archiveClassifier.set("html-docs")
-}
 
-tasks.register<Jar>("dokkaJavadocJar") {
-    dependsOn(tasks.dokkaGeneratePublicationJavadoc)
-    from(tasks.dokkaGeneratePublicationJavadoc.flatMap { it.outputDirectory })
-    archiveClassifier.set("javadoc")
-}
+// Dokka publication tasks are handled by the dokka plugin directly
 
 // publication
 
@@ -137,7 +133,6 @@ tasks.register<Jar>("dokkaJavadocJar") {
              version = artifactVersion
              from(components["java"])
              artifact(tasks.kotlinSourcesJar)
-             artifact(tasks["dokkaJavadocJar"])
 
              pom {
                  packaging = "jar"

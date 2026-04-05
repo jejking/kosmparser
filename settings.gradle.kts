@@ -10,19 +10,6 @@
 rootProject.name = "kosmparser"
 
 pluginManagement {
-    val kotlinVersion: String by settings
-    val dokkaVersion: String by settings
-    val detektVersion: String by settings
-    val versionsVersion: String by settings
-    val testLoggerVersion: String by settings
-    plugins {
-        kotlin("jvm") version kotlinVersion
-        id("io.gitlab.arturbosch.detekt") version detektVersion
-        id("com.github.ben-manes.versions") version versionsVersion
-        id("com.adarshr.test-logger") version testLoggerVersion
-        id("org.jetbrains.dokka") version dokkaVersion
-        id("org.jetbrains.dokka-javadoc") version dokkaVersion
-    }
     repositories {
         mavenCentral()
         gradlePluginPortal()
