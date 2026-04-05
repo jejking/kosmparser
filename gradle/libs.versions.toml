@@ -1,0 +1,35 @@
+[versions]
+kotlin = "2.1.10"
+dokka = "1.9.20"
+detekt = "1.23.7"
+versions = "0.51.0"
+testLogger = "4.0.0"
+
+kotlinxCoroutines = "1.10.1"
+aaltoXml = "1.3.3"
+reactiveStreams = "1.0.4"
+
+kotest = "5.9.1"
+wiremock = "3.9.2"
+
+[libraries]
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "kotlinxCoroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+
+reactive-streams = { module = "org.reactivestreams:reactive-streams", version.ref = "reactiveStreams" }
+
+aalto-xml = { module = "com.fasterxml:aalto-xml", version.ref = "aaltoXml" }
+
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
+
+wiremock = { module = "org.wiremock:wiremock", version.ref = "wiremock" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+versions = { id = "com.github.ben-manes.versions", version.ref = "versions" }
+test-logger = { id = "com.adarshr.test-logger", version.ref = "testLogger" }
