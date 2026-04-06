@@ -39,22 +39,22 @@ data class Bounds(val minPoint: Point, val maxPoint: Point)
  * Represents [attributes that are common](https://wiki.openstreetmap.org/wiki/Elements#Common_attributes)
  * to [Node], [Way] and [Relation] elements.
  *
- * @param id identifier
- * @param user display name of user who last changed object
- * @param uid numeric identifier of user who last changed the object
- * @param timestamp time of last modification
- * @param visible whether has been deleted from the database
- * @param version edit version of the object
- * @param changeSet most recent changeset number in which object was created or updated
+ * @param id identifier (may be negative for editor placeholder objects)
+ * @param user display name of user who last changed object; may be null for anonymous edits
+ * @param uid numeric identifier of user who last changed the object; may be null for anonymous edits
+ * @param timestamp time of last modification; may be null for JOSM new objects
+ * @param visible whether has been deleted from the database; defaults to true when absent in XML
+ * @param version edit version of the object; may be null for JOSM new objects
+ * @param changeSet most recent changeset number in which object was created or updated; may be null for JOSM new objects
  */
 data class ElementMetadata(
   val id: Long,
   val user: String?,
-  val uid: Long,
-  val timestamp: ZonedDateTime,
+  val uid: Long?,
+  val timestamp: ZonedDateTime?,
   val visible: Boolean = true,
-  val version: Long,
-  val changeSet: Long
+  val version: Long?,
+  val changeSet: Long?
 )
 
 sealed class OsmData
