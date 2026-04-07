@@ -1,5 +1,6 @@
-package com.jejking.kosmparser.osm
+package com.jejking.kosmparser.osm.xml
 
+import com.jejking.kosmparser.osm.ElementMetadata
 import com.jejking.kosmparser.xml.EndDocument
 import com.jejking.kosmparser.xml.EndElement
 import com.jejking.kosmparser.xml.SimpleXmlParseEvent

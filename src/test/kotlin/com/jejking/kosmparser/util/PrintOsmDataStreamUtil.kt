@@ -1,7 +1,7 @@
 package com.jejking.kosmparser.util
 
 import com.jejking.kosmparser.osm.OsmDataFlow
-import com.jejking.kosmparser.osm.OsmFlowMapper.toOsmDataFlow
+import com.jejking.kosmparser.osm.xml.OsmFlowMapper.toOsmDataFlow
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach

@@ -1,4 +1,6 @@
-package com.jejking.kosmparser.osm
+package com.jejking.kosmparser.osm.xml
+
+import com.jejking.kosmparser.osm.ElementMetadata
 
 /**
  * Intermediate event representation produced by Stage 1 of the parsing pipeline

@@ -1,7 +1,8 @@
-package com.jejking.kosmparser.osm
+package com.jejking.kosmparser.osm.xml
 
 import com.jejking.kosmparser.io.asFlow
 import com.jejking.kosmparser.io.openAsynchronousFileChannelForRead
+import com.jejking.kosmparser.osm.OsmDataFlow
 import com.jejking.kosmparser.xml.SimpleXmlParseEvent
 import com.jejking.kosmparser.xml.XmlFlowMapper.toParseEvents
 import kotlinx.coroutines.flow.Flow
