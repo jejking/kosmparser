@@ -123,7 +123,8 @@ internal fun readElementMetadata(startElement: StartElement): ElementMetadata {
     val id = attributes.getOrThrow("id").toLong()
     val user = attributes["user"]
     val uid = attributes["uid"]?.toLong()
-    val timestamp = attributes["timestamp"]?.let { Instant.parse(it).let { i -> ZonedDateTime.ofInstant(i, ZoneOffset.UTC) } }
+    val timestamp = attributes["timestamp"]
+        ?.let { ZonedDateTime.ofInstant(Instant.parse(it), ZoneOffset.UTC) }
     val visible = attributes["visible"]?.toBoolean() ?: true
     val version = attributes["version"]?.toLong()
     val changeSet = attributes["changeset"]?.toLong()

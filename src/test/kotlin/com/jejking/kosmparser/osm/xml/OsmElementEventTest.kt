@@ -43,18 +43,6 @@ class OsmElementEventTest : FunSpec() {
 
     private val expectedTimestamp = ZonedDateTime.of(2014, Month.MAY.value, 14, 14, 12, 39, 0, ZoneOffset.UTC)
 
-    private val fullAttributes = mapOf(
-        "id" to "1",
-        "lat" to "53.12345",
-        "lon" to "10.2345",
-        "changeset" to "1",
-        "timestamp" to "2014-05-14T14:12:39Z",
-        "uid" to "1",
-        "user" to "foo",
-        "version" to "1",
-        "visible" to "true"
-    )
-
     private val expectedMetadata = ElementMetadata(
         id = 1,
         changeSet = 1,

@@ -41,103 +41,132 @@ import kotlinx.coroutines.flow.flow
  *   other value causes an error.
  */
 fun Flow<OsmElementEvent>.toOsmData(): OsmDataFlow = flow {
-    var startOsm: StartOsm? = null
-    var boundsEvent: BoundsEvent? = null
-    var metadataEmitted = false
-
-    var currentNodeStart: StartNode? = null
-    val currentNodeTags = mutableMapOf<String, String>()
-
-    var currentWayStart: StartWay? = null
-    val currentWayNds = mutableListOf<Long>()
-    val currentWayTags = mutableMapOf<String, String>()
-
-    var currentRelationStart: StartRelation? = null
-    val currentRelationMembers = mutableListOf<Member>()
-    val currentRelationTags = mutableMapOf<String, String>()
-
-    collect { event ->
-        when (event) {
-            is StartOsm -> startOsm = event
-            is BoundsEvent -> boundsEvent = event
-
-            is StartNode -> {
-                if (!metadataEmitted) {
-                    emit(assembleOsmMetadata(startOsm, boundsEvent))
-                    metadataEmitted = true
-                }
-                currentNodeStart = event
-                currentNodeTags.clear()
-            }
-            is Tag -> when {
-                currentNodeStart != null -> currentNodeTags[event.key] = event.value
-                currentWayStart != null -> currentWayTags[event.key] = event.value
-                currentRelationStart != null -> currentRelationTags[event.key] = event.value
-            }
-            is EndNode -> {
-                val start = requireNotNull(currentNodeStart)
-                emit(Node(start.metadata, currentNodeTags.toMap(), Point(start.lat, start.lon)))
-                currentNodeStart = null
-                currentNodeTags.clear()
-            }
-
-            is StartWay -> {
-                if (!metadataEmitted) {
-                    emit(assembleOsmMetadata(startOsm, boundsEvent))
-                    metadataEmitted = true
-                }
-                currentWayStart = event
-                currentWayNds.clear()
-                currentWayTags.clear()
-            }
-            is NodeRef -> currentWayNds.add(event.ref)
-            is EndWay -> {
-                val start = requireNotNull(currentWayStart)
-                emit(Way(start.metadata, currentWayTags.toMap(), currentWayNds.toList()))
-                currentWayStart = null
-                currentWayNds.clear()
-                currentWayTags.clear()
-            }
-
-            is StartRelation -> {
-                if (!metadataEmitted) {
-                    emit(assembleOsmMetadata(startOsm, boundsEvent))
-                    metadataEmitted = true
-                }
-                currentRelationStart = event
-                currentRelationMembers.clear()
-                currentRelationTags.clear()
-            }
-            is RelationMemberRef -> {
-                val type = when (event.type) {
-                    "node" -> MemberType.NODE
-                    "way" -> MemberType.WAY
-                    "relation" -> MemberType.RELATION
-                    else -> error("Unknown member type: ${event.type}")
-                }
-                currentRelationMembers.add(Member(type, event.ref, event.role))
-            }
-            is EndRelation -> {
-                val start = requireNotNull(currentRelationStart)
-                emit(Relation(start.metadata, currentRelationTags.toMap(), currentRelationMembers.toList()))
-                currentRelationStart = null
-                currentRelationMembers.clear()
-                currentRelationTags.clear()
-            }
-        }
-    }
-
-    if (!metadataEmitted) {
-        emit(assembleOsmMetadata(startOsm, boundsEvent))
-    }
+    val accumulator = OsmDataAccumulator()
+    collect { event -> accumulator.handle(event).forEach { emit(it) } }
+    accumulator.finalMetadata()?.let { emit(it) }
 }
 
-private fun assembleOsmMetadata(startOsm: StartOsm?, boundsEvent: BoundsEvent?): OsmMetadata {
-    val bounds = boundsEvent?.let {
-        Bounds(
-            minPoint = Point(it.minlat.toDouble(), it.minlon.toDouble()),
-            maxPoint = Point(it.maxlat.toDouble(), it.maxlon.toDouble())
-        )
+/**
+ * Accumulates [OsmElementEvent] values and assembles them into [OsmData] domain objects.
+ * Each call to [handle] returns zero or more objects ready to emit downstream.
+ */
+@Suppress("TooManyFunctions")
+internal class OsmDataAccumulator {
+
+    private var startOsm: StartOsm? = null
+    private var boundsEvent: BoundsEvent? = null
+    private var metadataEmitted = false
+
+    private var currentNodeStart: StartNode? = null
+    private val currentNodeTags = mutableMapOf<String, String>()
+
+    private var currentWayStart: StartWay? = null
+    private val currentWayNds = mutableListOf<Long>()
+    private val currentWayTags = mutableMapOf<String, String>()
+
+    private var currentRelationStart: StartRelation? = null
+    private val currentRelationMembers = mutableListOf<Member>()
+    private val currentRelationTags = mutableMapOf<String, String>()
+
+    fun handle(event: OsmElementEvent): List<OsmData> = when (event) {
+        is StartOsm -> { startOsm = event; emptyList() }
+        is BoundsEvent -> { boundsEvent = event; emptyList() }
+        is StartNode -> handleStartNode(event)
+        is Tag -> { routeTag(event); emptyList() }
+        is EndNode -> listOf(buildNode())
+        is StartWay -> handleStartWay(event)
+        is NodeRef -> { currentWayNds.add(event.ref); emptyList() }
+        is EndWay -> listOf(buildWay())
+        is StartRelation -> handleStartRelation(event)
+        is RelationMemberRef -> { addMember(event); emptyList() }
+        is EndRelation -> listOf(buildRelation())
     }
-    return OsmMetadata(startOsm?.version, startOsm?.generator, bounds)
+
+    fun finalMetadata(): OsmMetadata? = if (!metadataEmitted) assembleOsmMetadata() else null
+
+    private fun emitMetadataIfNeeded(): List<OsmData> = if (!metadataEmitted) {
+        metadataEmitted = true
+        listOf(assembleOsmMetadata())
+    } else emptyList()
+
+    private fun assembleOsmMetadata(): OsmMetadata {
+        val bounds = boundsEvent?.let {
+            Bounds(
+                minPoint = Point(it.minlat.toDouble(), it.minlon.toDouble()),
+                maxPoint = Point(it.maxlat.toDouble(), it.maxlon.toDouble())
+            )
+        }
+        return OsmMetadata(startOsm?.version, startOsm?.generator, bounds)
+    }
+
+    private fun handleStartNode(event: StartNode): List<OsmData> {
+        val result = emitMetadataIfNeeded()
+        currentNodeStart = event
+        currentNodeTags.clear()
+        return result
+    }
+
+    private fun buildNode(): Node {
+        val start = requireNotNull(currentNodeStart)
+        val node = Node(start.metadata, currentNodeTags.toMap(), Point(start.lat, start.lon))
+        currentNodeStart = null
+        currentNodeTags.clear()
+        return node
+    }
+
+    private fun handleStartWay(event: StartWay): List<OsmData> {
+        val result = emitMetadataIfNeeded()
+        currentWayStart = event
+        currentWayNds.clear()
+        currentWayTags.clear()
+        return result
+    }
+
+    private fun buildWay(): Way {
+        val start = requireNotNull(currentWayStart)
+        val way = Way(start.metadata, currentWayTags.toMap(), currentWayNds.toList())
+        currentWayStart = null
+        currentWayNds.clear()
+        currentWayTags.clear()
+        return way
+    }
+
+    private fun handleStartRelation(event: StartRelation): List<OsmData> {
+        val result = emitMetadataIfNeeded()
+        currentRelationStart = event
+        currentRelationMembers.clear()
+        currentRelationTags.clear()
+        return result
+    }
+
+    private fun addMember(event: RelationMemberRef) {
+        val type = when (event.type) {
+            "node" -> MemberType.NODE
+            "way" -> MemberType.WAY
+            "relation" -> MemberType.RELATION
+            else -> error("Unknown member type: ${event.type}")
+        }
+        currentRelationMembers.add(Member(type, event.ref, event.role))
+    }
+
+    private fun buildRelation(): Relation {
+        val start = requireNotNull(currentRelationStart)
+        val relation = Relation(
+            start.metadata,
+            currentRelationTags.toMap(),
+            currentRelationMembers.toList()
+        )
+        currentRelationStart = null
+        currentRelationMembers.clear()
+        currentRelationTags.clear()
+        return relation
+    }
+
+    private fun routeTag(event: Tag) {
+        when {
+            currentNodeStart != null -> currentNodeTags[event.key] = event.value
+            currentWayStart != null -> currentWayTags[event.key] = event.value
+            currentRelationStart != null -> currentRelationTags[event.key] = event.value
+        }
+    }
 }

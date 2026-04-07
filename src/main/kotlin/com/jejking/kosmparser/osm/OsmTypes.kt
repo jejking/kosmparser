@@ -45,7 +45,8 @@ data class Bounds(val minPoint: Point, val maxPoint: Point)
  * @param timestamp time of last modification; may be null for JOSM new objects
  * @param visible whether has been deleted from the database; defaults to true when absent in XML
  * @param version edit version of the object; may be null for JOSM new objects
- * @param changeSet most recent changeset number in which object was created or updated; may be null for JOSM new objects
+ * @param changeSet most recent changeset number in which object was created or updated;
+ *   may be null for JOSM new objects
  */
 data class ElementMetadata(
   val id: Long,
