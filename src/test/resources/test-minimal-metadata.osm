@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm generator="manual" version="0.6">
+  <bounds maxlat="53.5707" maxlon="10.0314" minlat="53.5646" minlon="10.0155"/>
+  <node id="-1" lat="53.12345" lon="10.2345"/>
+  <node id="2" lat="54.23456" lon="11.5432">
+    <tag k="foo" v="bar"/>
+  </node>
+  <way id="3">
+    <nd ref="-1"/>
+    <nd ref="2"/>
+  </way>
+</osm>

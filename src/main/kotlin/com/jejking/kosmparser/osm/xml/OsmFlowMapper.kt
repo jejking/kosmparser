@@ -1,12 +1,12 @@
-package com.jejking.kosmparser.osm
+package com.jejking.kosmparser.osm.xml
 
 import com.jejking.kosmparser.io.asFlow
 import com.jejking.kosmparser.io.openAsynchronousFileChannelForRead
+import com.jejking.kosmparser.osm.OsmDataFlow
 import com.jejking.kosmparser.xml.SimpleXmlParseEvent
 import com.jejking.kosmparser.xml.XmlFlowMapper.toParseEvents
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.transform
 import java.net.URI
 import java.net.http.HttpClient
 import java.nio.channels.AsynchronousFileChannel
@@ -16,18 +16,11 @@ import java.nio.file.Path
 object OsmFlowMapper {
 
   /**
-   * Converts a flow of XML parse events to a flow of [OsmData].
+   * Converts a flow of XML parse events to a [OsmDataFlow] using the two-stage pipeline:
+   * `toOsmElementEvents()` then `toOsmData()`.
    */
-  fun toOsmDataFlow(simpleXmlParseEventFlow: Flow<SimpleXmlParseEvent>): OsmDataFlow {
-
-    var osmParserState: ParserState = ReadingOsmMetadata
-
-    return simpleXmlParseEventFlow.transform { simpleXmlParseEvent ->
-      val (newParserState, osmData) = osmParserState.accept(simpleXmlParseEvent)
-      osmData?.also { emit(it) }
-      osmParserState = newParserState
-    }
-  }
+  fun toOsmDataFlow(simpleXmlParseEventFlow: Flow<SimpleXmlParseEvent>): OsmDataFlow =
+    simpleXmlParseEventFlow.toOsmElementEvents().toOsmData()
 
   /**
    * Renders a file [Path] as [OsmDataFlow]. Takes care of closing the underlying

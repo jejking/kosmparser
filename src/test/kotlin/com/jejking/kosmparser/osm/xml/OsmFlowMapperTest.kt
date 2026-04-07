@@ -1,7 +1,16 @@
-package com.jejking.kosmparser.osm
+package com.jejking.kosmparser.osm.xml
 
 import com.jejking.kosmparser.io.asFlow
-import com.jejking.kosmparser.osm.OsmFlowMapper.toOsmDataFlow
+import com.jejking.kosmparser.osm.Bounds
+import com.jejking.kosmparser.osm.ElementMetadata
+import com.jejking.kosmparser.osm.Member
+import com.jejking.kosmparser.osm.MemberType
+import com.jejking.kosmparser.osm.Node
+import com.jejking.kosmparser.osm.OsmMetadata
+import com.jejking.kosmparser.osm.Point
+import com.jejking.kosmparser.osm.Relation
+import com.jejking.kosmparser.osm.Way
+import com.jejking.kosmparser.osm.xml.OsmFlowMapper.toOsmDataFlow
 import com.jejking.kosmparser.util.getPath
 import com.jejking.kosmparser.util.openFileChannel
 import com.jejking.kosmparser.xml.SimpleXmlParseEvent

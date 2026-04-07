@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm generator="manual" version="0.6">
+  <node id="1" lat="53.12345" lon="10.2345" changeset="1" timestamp="2014-05-14T14:12:39Z"
+    uid="1" user="foo" version="1" visible="true"/>
+  <node id="2" lat="54.23456" lon="11.5432" changeset="1" timestamp="2014-05-14T14:12:39Z"
+    uid="1" user="foo" version="1" visible="true">
+    <tag k="foo" v="bar"/>
+  </node>
+  <way id="3" changeset="1" timestamp="2014-05-14T14:12:39Z" uid="1" user="foo" version="1" visible="true">
+    <nd ref="1"/>
+    <nd ref="2"/>
+  </way>
+</osm>

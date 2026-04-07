@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm generator="manual" version="0.6">
+  <note>The data included in this document is from www.openstreetmap.org.</note>
+  <meta osm_base="2023-04-14T22:35:07Z"/>
+  <bounds maxlat="53.5707" maxlon="10.0314" minlat="53.5646" minlon="10.0155"/>
+  <node id="1" lat="53.12345" lon="10.2345" changeset="1" timestamp="2014-05-14T14:12:39Z"
+    uid="1" user="foo" version="1" visible="true"/>
+  <unknown_element some_attr="value"/>
+  <node id="2" lat="54.23456" lon="11.5432" changeset="1" timestamp="2014-05-14T14:12:39Z"
+    uid="1" user="foo" version="1" visible="true">
+    <tag k="foo" v="bar"/>
+  </node>
+</osm>

@@ -32,8 +32,15 @@ URI.create("https://example.com/osm").toOsmDataFlow()
 
 ## Design Notes
 
-The project is also a simple learning experiment with Kotlin Flows - and chains flows together to produce increasing layers of abstraction.
+The project chains Kotlin Flows to produce increasing layers of abstraction.
 
-At the bottom layer, we use a `Flow<ByteArray>` for raw input data that is read from a file or a URI. We feed that into an XML Flow Mapper (wrapping the asynchronous [aalto-xml XML parser](https://github.com/FasterXML/aalto-xml)) to produce a `Flow<SimpleXmlParseEvent>`. Given the fact that OSM does not use all the features of XML, we use a simplified parse event model using Kotlin data classes. These XML parse events are then fed into an OSM Flow Mapper to produce a `Flow<OsmData>`.
+At the bottom layer, a `Flow<ByteArray>` reads raw input from a file or URI. This feeds into an XML Flow Mapper (wrapping the asynchronous [aalto-xml](https://github.com/FasterXML/aalto-xml) parser) to produce a `Flow<SimpleXmlParseEvent>`.
 
-The OSM Flow Mapper handles validation and conversion logic for the XML Parse Events. Validation is handled programmatically in the absence of official DTDs or XML Schema. The syntactic validation rules are implemented by an internal parser state machine.
+The OSM parser then uses a **two-stage pipeline** to convert XML events to domain objects:
+
+1. **Stage 1 — `toOsmElementEvents()`**: converts `Flow<SimpleXmlParseEvent>` to `Flow<OsmElementEvent>`, a format-agnostic intermediate representation. Unknown XML elements (e.g. `<note>`, `<meta>`) are silently skipped.
+2. **Stage 2 — `toOsmData()`**: converts `Flow<OsmElementEvent>` to `Flow<OsmData>`, assembling the domain model by accumulating tags, node references, and relation members within each element's scope.
+
+`OsmMetadata` (assembled from the `<osm>` root element and the optional `<bounds>` element) is always emitted as the first item in the output flow.
+
+Several element attributes are optional per the OSM XML specification and are represented as nullable fields in `ElementMetadata`: `uid`, `timestamp`, `version`, and `changeSet`. The `visible` attribute defaults to `true` when absent. Element IDs may be negative (editor placeholder objects).
