@@ -21,6 +21,8 @@ import com.jejking.kosmparser.xml.XmlFlowMapper.toParseEvents
 import com.jejking.kosmparser.xml.XmlFlowTools.toParseEventFlow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainInOrder
+import io.kotest.matchers.comparables.shouldBeGreaterThan
+import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.filter
@@ -187,7 +189,11 @@ class OsmElementEventTest : FunSpec() {
         context("property-based: unknown elements injected at random positions") {
 
             test("injecting unknown start/end pairs at any position yields same events as clean stream") {
-                checkAll(Arb.string(1..20).filter { it.all { c -> c.isLetter() } }) { unknownName ->
+                val knownOsmElements = setOf("osm", "bounds", "node", "way", "relation", "tag", "nd", "member")
+                checkAll(
+                    Arb.string(1..20)
+                        .filter { name -> name.all { c -> c.isLetter() } && name !in knownOsmElements }
+                ) { unknownName ->
                     val nodeId = 42L
                     val baseXml = """
                         <osm version="0.6" generator="test">
@@ -212,34 +218,58 @@ class OsmElementEventTest : FunSpec() {
 
         context("property-based: arbitrary domain objects produce correct event sequences") {
 
-            test("arbitrary nodes produce StartNode/EndNode events") {
+            test("arbitrary nodes produce StartNode before Tags before EndNode") {
                 checkAll(arbNode) { node ->
                     val xml = node.toOsmXml()
                     val events = toParseEventFlow(xml).toOsmElementEvents().toList()
-                    events.any { it is StartNode && it.id == node.elementMetadata.id } shouldBe true
-                    events.any { it is EndNode && it.id == node.elementMetadata.id } shouldBe true
+                    val startIdx = events.indexOfFirst { it is StartNode && it.id == node.elementMetadata.id }
+                    val endIdx = events.indexOfFirst { it is EndNode && it.id == node.elementMetadata.id }
+                    val tagIndices = events.mapIndexedNotNull { i, e -> if (e is Tag) i else null }
+
+                    startIdx shouldBe 1  // StartOsm is always index 0
+                    endIdx shouldBeGreaterThan startIdx
+                    tagIndices.all { it > startIdx && it < endIdx } shouldBe true
                 }
             }
 
-            test("arbitrary ways produce StartWay/NodeRef/EndWay events") {
+            test("arbitrary ways produce StartWay before NodeRefs before EndWay, NodeRefs match nds") {
                 checkAll(arbWay) { way ->
                     val xml = way.toOsmXml()
                     val events = toParseEventFlow(xml).toOsmElementEvents().toList()
-                    events.any { it is StartWay && it.id == way.elementMetadata.id } shouldBe true
-                    val nodeRefs = events.filterIsInstance<NodeRef>().map { it.ref }
-                    nodeRefs shouldBe way.nds
-                    events.any { it is EndWay && it.id == way.elementMetadata.id } shouldBe true
+                    val startIdx = events.indexOfFirst { it is StartWay && it.id == way.elementMetadata.id }
+                    val endIdx = events.indexOfFirst { it is EndWay && it.id == way.elementMetadata.id }
+                    val nodeRefs = events.filterIsInstance<NodeRef>()
+                    val nodeRefIndices = events.mapIndexedNotNull { i, e -> if (e is NodeRef) i else null }
+                    val tagIndices = events.mapIndexedNotNull { i, e -> if (e is Tag) i else null }
+
+                    startIdx shouldBe 1
+                    endIdx shouldBeGreaterThan startIdx
+                    nodeRefs.map { it.ref } shouldBe way.nds
+                    nodeRefIndices.all { it > startIdx && it < endIdx } shouldBe true
+                    tagIndices.all { it > startIdx && it < endIdx } shouldBe true
+                    if (nodeRefIndices.isNotEmpty() && tagIndices.isNotEmpty()) {
+                        nodeRefIndices.max() shouldBeLessThan tagIndices.min()
+                    }
                 }
             }
 
-            test("arbitrary relations produce StartRelation/RelationMemberRef/EndRelation events") {
+            test("arbitrary relations produce StartRelation before RelationMemberRefs before EndRelation") {
                 checkAll(arbRelation) { relation ->
                     val xml = relation.toOsmXml()
                     val events = toParseEventFlow(xml).toOsmElementEvents().toList()
-                    events.any { it is StartRelation && it.id == relation.elementMetadata.id } shouldBe true
-                    val memberRefs = events.filterIsInstance<RelationMemberRef>()
-                    memberRefs.size shouldBe relation.members.size
-                    events.any { it is EndRelation && it.id == relation.elementMetadata.id } shouldBe true
+                    val startIdx = events.indexOfFirst { it is StartRelation && it.id == relation.elementMetadata.id }
+                    val endIdx = events.indexOfFirst { it is EndRelation && it.id == relation.elementMetadata.id }
+                    val memberRefIndices = events.mapIndexedNotNull { i, e -> if (e is RelationMemberRef) i else null }
+                    val tagIndices = events.mapIndexedNotNull { i, e -> if (e is Tag) i else null }
+
+                    startIdx shouldBe 1
+                    endIdx shouldBeGreaterThan startIdx
+                    memberRefIndices.size shouldBe relation.members.size
+                    memberRefIndices.all { it > startIdx && it < endIdx } shouldBe true
+                    tagIndices.all { it > startIdx && it < endIdx } shouldBe true
+                    if (memberRefIndices.isNotEmpty() && tagIndices.isNotEmpty()) {
+                        memberRefIndices.max() shouldBeLessThan tagIndices.min()
+                    }
                 }
             }
         }
