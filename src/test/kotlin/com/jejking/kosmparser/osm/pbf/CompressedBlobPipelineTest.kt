@@ -1,8 +1,11 @@
 package com.jejking.kosmparser.osm.pbf
 
 import com.google.protobuf.ByteString
+import com.jejking.kosmparser.osm.Member
+import com.jejking.kosmparser.osm.MemberType
 import com.jejking.kosmparser.osm.Node
 import com.jejking.kosmparser.osm.OsmMetadata
+import com.jejking.kosmparser.osm.Relation
 import com.jejking.kosmparser.osm.Way
 import com.jejking.kosmparser.osm.pbf.PbfFlowMapper.toOsmDataFlow
 import crosby.binary.Fileformat
@@ -12,6 +15,7 @@ import crosby.binary.denseNodes
 import crosby.binary.headerBlock
 import crosby.binary.primitiveBlock
 import crosby.binary.primitiveGroup
+import crosby.binary.relation
 import crosby.binary.stringTable
 import crosby.binary.way
 import io.kotest.assertions.throwables.shouldThrow
@@ -26,7 +30,7 @@ import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.io.InputStream
 import java.nio.file.Files
-import java.util.zip.Deflater
+import java.nio.file.Path
 
 /**
  * Integration tests for the full PBF pipeline with zlib-compressed blobs.
@@ -40,20 +44,9 @@ import java.util.zip.Deflater
  */
 class CompressedBlobPipelineTest : FunSpec({
 
-    /** Compresses [data] with zlib (same as Osmosis/standard PBF writers). */
-    fun zlibCompress(data: ByteArray): ByteArray {
-        val deflater = Deflater()
-        deflater.setInput(data)
-        deflater.finish()
-        val output = ByteArray(data.size + 1024)
-        val count = deflater.deflate(output)
-        deflater.end()
-        return output.copyOf(count)
-    }
-
     /** Wraps [protoBytes] in a zlib-compressed [Fileformat.Blob]. */
     fun compressedBlob(protoBytes: ByteArray): Fileformat.Blob = blob {
-        zlibData = ByteString.copyFrom(zlibCompress(protoBytes))
+        zlibData = ByteString.copyFrom(PbfTestUtils.zlibCompress(protoBytes))
         rawSize = protoBytes.size
     }
 
@@ -79,9 +72,22 @@ class CompressedBlobPipelineTest : FunSpec({
         return baos.toByteArray().inputStream()
     }
 
-    context("full pipeline with zlib-compressed blobs") {
+    /**
+     * Writes [stream] to a temp PBF file, passes its [Path] to [block], then deletes the file.
+     */
+    fun withTempPbf(stream: InputStream, block: (Path) -> Unit) {
+        val tmpFile = Files.createTempFile("kosmparser-test-", ".osm.pbf")
+        try {
+            tmpFile.toFile().outputStream().use { out -> stream.copyTo(out) }
+            block(tmpFile)
+        } finally {
+            Files.deleteIfExists(tmpFile)
+        }
+    }
 
-        test("OSMHeader blob decompresses to OsmMetadata") {
+    context("direct blob reading") {
+
+        test("OSMHeader compressed blob is read with correct type and decompresses to OsmMetadata") {
             val header = headerBlock {
                 requiredFeatures += "OsmSchema-V0.6"
                 requiredFeatures += "DenseNodes"
@@ -96,8 +102,11 @@ class CompressedBlobPipelineTest : FunSpec({
             val meta = Osmformat.HeaderBlock.parseFrom(blobs[0].blob.decompress()).toOsmMetadata()
             meta.generator shouldBe "test"
         }
+    }
 
-        test("full pipeline: compressed header + compressed OSMData → OsmMetadata + Nodes") {
+    context("full pipeline with zlib-compressed blobs") {
+
+        test("compressed header + compressed OSMData → OsmMetadata + Nodes") {
             val header = headerBlock {
                 requiredFeatures += "OsmSchema-V0.6"
                 requiredFeatures += "DenseNodes"
@@ -125,22 +134,18 @@ class CompressedBlobPipelineTest : FunSpec({
                 "OSMData" to compressedBlob(block.toByteArray())
             )
 
-            // Write to temp file so we can use Path.toOsmDataFlow()
-            val tmpFile = Files.createTempFile("kosmparser-test-", ".osm.pbf")
-            try {
-                tmpFile.toFile().outputStream().use { out -> stream.copyTo(out) }
-
+            withTempPbf(stream) { tmpFile ->
                 val result = runBlocking { tmpFile.toOsmDataFlow().toList() }
                 result shouldHaveSize 3  // OsmMetadata + 2 Nodes
                 result[0].shouldBeInstanceOf<OsmMetadata>()
                 val node1 = result[1] as Node
                 val node2 = result[2] as Node
                 node1.elementMetadata.id shouldBe 1L
-                node2.elementMetadata.id shouldBe 2L
                 node1.point.lat shouldBe 53.12345
                 node1.point.lon shouldBe 10.2345
-            } finally {
-                Files.deleteIfExists(tmpFile)
+                node2.elementMetadata.id shouldBe 2L
+                node2.point.lat shouldBe 53.12345
+                node2.point.lon shouldBe 10.2345
             }
         }
 
@@ -151,9 +156,9 @@ class CompressedBlobPipelineTest : FunSpec({
             }
             val block = primitiveBlock {
                 stringtable = stringTable {
-                    s += ByteString.copyFromUtf8("")    // index 0: empty
-                    s += ByteString.copyFromUtf8("highway")  // index 1
-                    s += ByteString.copyFromUtf8("residential")  // index 2
+                    s += ByteString.copyFromUtf8("")           // index 0: empty
+                    s += ByteString.copyFromUtf8("highway")   // index 1
+                    s += ByteString.copyFromUtf8("residential") // index 2
                 }
                 granularity = 100
                 latOffset = 0
@@ -173,17 +178,94 @@ class CompressedBlobPipelineTest : FunSpec({
                 "OSMHeader" to compressedBlob(header.toByteArray()),
                 "OSMData" to compressedBlob(block.toByteArray())
             )
-            val tmpFile = Files.createTempFile("kosmparser-test-", ".osm.pbf")
-            try {
-                tmpFile.toFile().outputStream().use { out -> stream.copyTo(out) }
+            withTempPbf(stream) { tmpFile ->
                 val result = runBlocking { tmpFile.toOsmDataFlow().toList() }
                 result shouldHaveSize 2  // OsmMetadata + Way
                 val w = result[1] as Way
                 w.elementMetadata.id shouldBe 10L
                 w.tags shouldBe mapOf("highway" to "residential")
                 w.nds shouldBe listOf(100L, 101L)
-            } finally {
-                Files.deleteIfExists(tmpFile)
+            }
+        }
+
+        test("compressed OSMData with Relation is decoded correctly") {
+            val header = headerBlock {
+                requiredFeatures += "OsmSchema-V0.6"
+                requiredFeatures += "DenseNodes"
+            }
+            val block = primitiveBlock {
+                stringtable = stringTable {
+                    s += ByteString.copyFromUtf8("")              // 0: empty
+                    s += ByteString.copyFromUtf8("type")          // 1
+                    s += ByteString.copyFromUtf8("multipolygon")  // 2
+                    s += ByteString.copyFromUtf8("outer")         // 3
+                    s += ByteString.copyFromUtf8("inner")         // 4
+                }
+                granularity = 100
+                latOffset = 0
+                lonOffset = 0
+                dateGranularity = 1000
+                primitivegroup += primitiveGroup {
+                    relations += relation {
+                        id = 42L
+                        keys += 1
+                        vals += 2
+                        rolesSid += 3   // "outer"
+                        rolesSid += 4   // "inner"
+                        memids += 100L  // delta: abs IDs = [100, 101]
+                        memids += 1L
+                        types += Osmformat.Relation.MemberType.WAY
+                        types += Osmformat.Relation.MemberType.WAY
+                    }
+                }
+            }
+            val stream = buildPbfStream(
+                "OSMHeader" to compressedBlob(header.toByteArray()),
+                "OSMData" to compressedBlob(block.toByteArray())
+            )
+            withTempPbf(stream) { tmpFile ->
+                val result = runBlocking { tmpFile.toOsmDataFlow().toList() }
+                result shouldHaveSize 2  // OsmMetadata + Relation
+                val rel = result[1] as Relation
+                rel.elementMetadata.id shouldBe 42L
+                rel.tags shouldBe mapOf("type" to "multipolygon")
+                rel.members shouldBe listOf(
+                    Member(MemberType.WAY, 100L, "outer"),
+                    Member(MemberType.WAY, 101L, "inner")
+                )
+            }
+        }
+
+        test("multiple OSMData blobs in one stream are all decoded") {
+            val header = headerBlock {
+                requiredFeatures += "OsmSchema-V0.6"
+                requiredFeatures += "DenseNodes"
+            }
+            fun nodeBlock(nodeId: Long) = primitiveBlock {
+                stringtable = stringTable { s += ByteString.copyFromUtf8("") }
+                granularity = 100
+                latOffset = 0
+                lonOffset = 0
+                dateGranularity = 1000
+                primitivegroup += primitiveGroup {
+                    dense = denseNodes {
+                        id += nodeId
+                        lat += 0L
+                        lon += 0L
+                    }
+                }
+            }
+            val stream = buildPbfStream(
+                "OSMHeader" to compressedBlob(header.toByteArray()),
+                "OSMData" to compressedBlob(nodeBlock(1L).toByteArray()),
+                "OSMData" to compressedBlob(nodeBlock(2L).toByteArray())
+            )
+            withTempPbf(stream) { tmpFile ->
+                val result = runBlocking { tmpFile.toOsmDataFlow().toList() }
+                result shouldHaveSize 3  // OsmMetadata + Node(1) + Node(2)
+                result[0].shouldBeInstanceOf<OsmMetadata>()
+                (result[1] as Node).elementMetadata.id shouldBe 1L
+                (result[2] as Node).elementMetadata.id shouldBe 2L
             }
         }
 
@@ -194,14 +276,10 @@ class CompressedBlobPipelineTest : FunSpec({
                 requiredFeatures += "HasSorting"
             }
             val stream = buildPbfStream("OSMHeader" to compressedBlob(header.toByteArray()))
-            val tmpFile = Files.createTempFile("kosmparser-test-", ".osm.pbf")
-            try {
-                tmpFile.toFile().outputStream().use { out -> stream.copyTo(out) }
+            withTempPbf(stream) { tmpFile ->
                 val result = runBlocking { tmpFile.toOsmDataFlow().toList() }
                 result shouldHaveSize 1
                 result[0].shouldBeInstanceOf<OsmMetadata>()
-            } finally {
-                Files.deleteIfExists(tmpFile)
             }
         }
     }
@@ -209,8 +287,6 @@ class CompressedBlobPipelineTest : FunSpec({
     context("BlobReader error cases") {
 
         test("truncated blob body throws IllegalStateException with clear message") {
-            // Write valid 4-byte header size + valid BlobHeader, but only 10 bytes of blob data
-            // when header declares datasize = 100
             val blobHeader = Fileformat.BlobHeader.newBuilder()
                 .setType("OSMData")
                 .setDatasize(100)

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import java.net.URI
 import java.nio.file.Path
+import kotlin.system.exitProcess
 
 /**
  * Command-line demo application that streams OSM data and prints each element to stdout.
@@ -61,7 +62,7 @@ object OsmDemoApp {
             System.err.println("Usage: OsmDemoApp <format> <source>")
             System.err.println("  format : xml | pbf")
             System.err.println("  source : /path/to/file  OR  https://example.com/file")
-            System.exit(1)
+            exitProcess(1)
         }
 
         val format = args[0].lowercase()

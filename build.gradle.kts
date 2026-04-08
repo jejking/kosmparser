@@ -111,10 +111,7 @@ tasks.jacocoTestReport {
     classDirectories.setFrom(
         files(classDirectories.files.map { dir ->
             fileTree(dir) {
-                exclude(
-                    "**/crosby/binary/**",
-                    "**/com/jejking/kosmparser/demo/**"
-                )
+                exclude("**/crosby/binary/**")
             }
         })
     )
@@ -122,16 +119,22 @@ tasks.jacocoTestReport {
 
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
-    classDirectories.setFrom(tasks.jacocoTestReport.get().classDirectories)
+    classDirectories.setFrom(
+        files(classDirectories.files.map { dir ->
+            fileTree(dir) {
+                exclude("**/crosby/binary/**")
+            }
+        })
+    )
     violationRules {
         rule {
             limit {
                 counter = "LINE"
-                minimum = "0.75".toBigDecimal()
+                minimum = "0.88".toBigDecimal()
             }
             limit {
                 counter = "BRANCH"
-                minimum = "0.65".toBigDecimal()
+                minimum = "0.70".toBigDecimal()
             }
         }
     }
