@@ -9,6 +9,9 @@ kotlinxCoroutines = "1.8.1"
 aaltoXml = "1.3.4"
 reactiveStreams = "1.0.4"
 
+protobuf = "4.29.3"
+protobufPlugin = "0.9.6"
+
 kotest = "5.9.1"
 wiremock = "3.13.2"
 
@@ -20,6 +23,8 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 reactive-streams = { module = "org.reactivestreams:reactive-streams", version.ref = "reactiveStreams" }
 
 aalto-xml = { module = "com.fasterxml:aalto-xml", version.ref = "aaltoXml" }
+
+protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "protobuf" }
 
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
@@ -33,3 +38,4 @@ dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 versions = { id = "com.github.ben-manes.versions", version.ref = "versions" }
 test-logger = { id = "com.adarshr.test-logger", version.ref = "testLogger" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }

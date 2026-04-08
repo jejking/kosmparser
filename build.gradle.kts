@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.versions)
     alias(libs.plugins.test.logger)
     alias(libs.plugins.dokka)
+    alias(libs.plugins.protobuf)
     `maven-publish`
 }
 
@@ -34,6 +35,26 @@ detekt {
 
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
     jvmTarget = "21"
+    jdkHome.set(
+        javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }.get().executablePath.asFile.parentFile.parentFile
+    )
+    // Exclude generated protobuf Kotlin DSL sources
+    exclude("**/build/generated/**")
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}"
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                create("kotlin")
+            }
+        }
+    }
 }
 
 dependencies {
@@ -41,6 +62,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.reactive)
     implementation(libs.reactive.streams)
     implementation(libs.aalto.xml)
+    implementation(libs.protobuf.kotlin)
 
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
