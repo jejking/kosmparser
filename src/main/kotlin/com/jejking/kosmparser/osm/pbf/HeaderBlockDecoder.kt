@@ -6,21 +6,19 @@ import com.jejking.kosmparser.osm.Point
 import crosby.binary.Osmformat
 import kotlin.math.roundToLong
 
-private const val NANODEGREES_TO_DEGREES = 1e-9
-private const val OSM_COORDINATE_PRECISION_SCALE = 1e7
 
 private fun Long.nanoDegreesToDouble(): Double {
     val raw = this * NANODEGREES_TO_DEGREES * OSM_COORDINATE_PRECISION_SCALE
     return raw.roundToLong().toDouble() / OSM_COORDINATE_PRECISION_SCALE
 }
 
-private val SUPPORTED_REQUIRED_FEATURES = setOf("OsmSchema-V0.6", "DenseNodes")
+private val SUPPORTED_REQUIRED_FEATURES = setOf("OsmSchema-V0.6", "DenseNodes", "HasSorting")
 
 /**
  * Decodes a [Osmformat.HeaderBlock] into an [OsmMetadata] domain object.
  *
  * Validates that all `required_features` in the block are among the known supported set.
- * Currently supported features: `OsmSchema-V0.6`, `DenseNodes`.
+ * Currently supported features: `OsmSchema-V0.6`, `DenseNodes`, `HasSorting`.
  *
  * The HeaderBlock's `bbox` (if present) is decoded from nanodegrees (fixed 1e-9 scale)
  * into a [Bounds]. The `writingprogram` field maps to `generator`.

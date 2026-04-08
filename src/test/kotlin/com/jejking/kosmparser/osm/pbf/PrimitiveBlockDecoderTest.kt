@@ -146,6 +146,35 @@ class PrimitiveBlockDecoderTest : FunSpec({
             meta.visible shouldBe true
         }
 
+        test("anonymous edit with uid=0 and userSid=0 yields null uid and null user") {
+            // StringTable: [""] — index 0 is empty string, no named user
+            val block = primitiveBlock {
+                stringtable = makeStringTable()
+                granularity = 100
+                latOffset = 0
+                lonOffset = 0
+                dateGranularity = 1000
+                primitivegroup += primitiveGroup {
+                    dense = denseNodes {
+                        id += 1L
+                        lat += 531234500L
+                        lon += 102345000L
+                        denseinfo = denseInfo {
+                            version += 1
+                            timestamp += testTimestampEncoded
+                            changeset += 1L
+                            uid += 0   // anonymous: uid delta = 0 → absolute 0
+                            userSid += 0  // anonymous: userSid delta = 0 → empty string
+                        }
+                    }
+                }
+            }
+            val result = block.toOsmDataList()
+            val meta = (result[0] as Node).elementMetadata
+            meta.uid shouldBe null
+            meta.user shouldBe null
+        }
+
         test("second tagless node has empty tag map when first node has tags") {
             // StringTable: ["", "k", "v"]
             // two nodes: node 1 has [k=v], node 2 has no tags
@@ -211,6 +240,8 @@ class PrimitiveBlockDecoderTest : FunSpec({
             w.elementMetadata.id shouldBe 3L
             w.tags shouldBe mapOf("highway" to "motorway")
             w.nds shouldBe listOf(1L, 2L)
+            w.elementMetadata.user shouldBe null
+            w.elementMetadata.uid shouldBe 1L
         }
     }
 
@@ -264,6 +295,20 @@ class PrimitiveBlockDecoderTest : FunSpec({
                 primitivegroup += primitiveGroup { }
             }
             block.toOsmDataList() shouldBe emptyList()
+        }
+    }
+
+    context("decodeDenseTags edge cases") {
+        test("tags preserved when trailing sentinel 0 is omitted") {
+            // keys_vals: [1(foo), 2(bar)] — no trailing 0
+            val stringTable = makeStringTable("foo", "bar")
+            val result = decodeDenseTags(listOf(1, 2), stringTable)
+            result shouldBe listOf(mapOf("foo" to "bar"))
+        }
+
+        test("empty keys_vals returns empty list") {
+            val result = decodeDenseTags(emptyList(), makeStringTable())
+            result shouldBe emptyList()
         }
     }
 })

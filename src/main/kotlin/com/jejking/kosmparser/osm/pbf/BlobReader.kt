@@ -16,7 +16,7 @@ import java.io.InputStream
  * This function is **blocking** — callers must ensure it runs on an appropriate dispatcher
  * (e.g. `Dispatchers.IO`).
  */
-fun InputStream.readBlobSequence(): Sequence<RawBlob> = sequence {
+fun InputStream.readBlobSequence(): Sequence<TypedBlob> = sequence {
     val dis = DataInputStream(this@readBlobSequence)
     while (true) {
         val headerSize = try {
@@ -25,9 +25,15 @@ fun InputStream.readBlobSequence(): Sequence<RawBlob> = sequence {
             break
         }
         val headerBytes = dis.readNBytes(headerSize)
+        check(headerBytes.size == headerSize) {
+            "Truncated PBF: expected $headerSize header bytes, got ${headerBytes.size}"
+        }
         val blobHeader = Fileformat.BlobHeader.parseFrom(headerBytes)
         val blobBytes = dis.readNBytes(blobHeader.datasize)
+        check(blobBytes.size == blobHeader.datasize) {
+            "Truncated PBF: expected ${blobHeader.datasize} blob bytes, got ${blobBytes.size}"
+        }
         val blob = Fileformat.Blob.parseFrom(blobBytes)
-        yield(RawBlob(blobHeader.type, blob))
+        yield(TypedBlob(blobHeader.type, blob))
     }
 }

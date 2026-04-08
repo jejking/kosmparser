@@ -30,7 +30,14 @@ import java.nio.file.Paths
 object OsmosisFixtureGenerator {
 
     private val osmosisBin: String =
-        System.getenv("OSMOSIS_BIN") ?: "/tmp/osmosis/osmosis-0.49.2/bin/osmosis"
+        System.getenv("OSMOSIS_BIN") ?: findOsmosisInPath() ?: "/tmp/osmosis/osmosis-0.49.2/bin/osmosis"
+
+    private fun findOsmosisInPath(): String? = runCatching {
+        val process = ProcessBuilder("which", "osmosis").start()
+        val result = process.inputStream.bufferedReader().readLine()?.trim()
+        val exitCode = process.waitFor()
+        if (exitCode == 0 && !result.isNullOrEmpty()) result else null
+    }.getOrNull()
 
     private val resourceDir: Path =
         Paths.get("src/test/resources")

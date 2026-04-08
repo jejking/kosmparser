@@ -7,7 +7,7 @@ import com.jejking.kosmparser.osm.OsmMetadata
 import com.jejking.kosmparser.osm.Point
 import com.jejking.kosmparser.osm.Relation
 import com.jejking.kosmparser.osm.Way
-import com.jejking.kosmparser.osm.pbf.toOsmDataFlow as pbfToOsmDataFlow
+import com.jejking.kosmparser.osm.pbf.PbfFlowMapper.toOsmDataFlow as pbfToOsmDataFlow
 import com.jejking.kosmparser.osm.xml.OsmFlowMapper.toOsmDataFlow as xmlToOsmDataFlow
 import com.jejking.kosmparser.util.getPath
 import io.kotest.core.spec.style.FunSpec

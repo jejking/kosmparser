@@ -65,16 +65,29 @@ private fun decodeDenseInfo(
     ids: List<Long>,
     block: Osmformat.PrimitiveBlock
 ): List<ElementMetadata> {
+    val nodeCount = ids.size
     val timestamps = decodeDelta(denseInfo.timestampList)
     val changesets = decodeDelta(denseInfo.changesetList)
     val uids = decodeDelta(denseInfo.uidList.map { it.toLong() })
     val userSids = decodeDelta(denseInfo.userSidList.map { it.toLong() })
+    require(timestamps.size == nodeCount) {
+        "DenseInfo timestamp count (${timestamps.size}) != node count ($nodeCount)"
+    }
+    require(changesets.size == nodeCount) {
+        "DenseInfo changeset count (${changesets.size}) != node count ($nodeCount)"
+    }
+    require(uids.size == nodeCount) {
+        "DenseInfo uid count (${uids.size}) != node count ($nodeCount)"
+    }
+    require(userSids.size == nodeCount) {
+        "DenseInfo userSid count (${userSids.size}) != node count ($nodeCount)"
+    }
 
     return ids.indices.map { i ->
         ElementMetadata(
             id = ids[i],
-            user = block.stringtable.resolveString(userSids[i].toInt()),
-            uid = uids[i],
+            user = block.stringtable.resolveString(userSids[i].toInt()).ifEmpty { null },
+            uid = if (uids[i] == 0L) null else uids[i],
             timestamp = decodeTimestamp(timestamps[i], block.dateGranularity),
             visible = if (denseInfo.visibleList.isNotEmpty()) denseInfo.visibleList[i] else true,
             version = denseInfo.versionList[i].toLong(),
@@ -110,8 +123,8 @@ private fun Osmformat.Relation.toRelation(block: Osmformat.PrimitiveBlock): Rela
 private fun Osmformat.Info.toMetadata(elementId: Long, block: Osmformat.PrimitiveBlock) =
     ElementMetadata(
         id = elementId,
-        user = block.stringtable.resolveString(userSid),
-        uid = uid.toLong(),
+        user = block.stringtable.resolveString(userSid).ifEmpty { null },
+        uid = if (uid == 0) null else uid.toLong(),
         timestamp = decodeTimestamp(timestamp, block.dateGranularity),
         visible = if (hasVisible()) visible else true,
         version = version.toLong(),
@@ -148,11 +161,16 @@ internal fun decodeDenseTags(
             currentTags = mutableMapOf()
             i++
         } else {
+            require(i + 1 < keysVals.size) {
+                "Malformed PBF keys_vals: key index at position $i has no following value index"
+            }
             val valIndex = keysVals[i + 1]
             currentTags[stringTable.resolveString(keyIndex)] = stringTable.resolveString(valIndex)
             i += 2
         }
     }
+    // Flush any trailing node tags if the sentinel 0 was omitted
+    if (currentTags.isNotEmpty()) result.add(currentTags.toMap())
     return result
 }
 

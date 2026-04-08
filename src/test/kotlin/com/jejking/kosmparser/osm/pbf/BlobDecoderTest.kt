@@ -39,6 +39,17 @@ class BlobDecoderTest : FunSpec({
         zlibBlob.decompress() shouldBe payload
     }
 
+    test("throws IllegalStateException when rawSize does not match decompressed size") {
+        val compressed = zlibCompress(payload)
+        val mismatchedBlob = blob {
+            zlibData = ByteString.copyFrom(compressed)
+            rawSize = payload.size + 99  // wrong size
+        }
+        shouldThrow<IllegalStateException> {
+            mismatchedBlob.decompress()
+        }
+    }
+
     test("throws UnsupportedOperationException for unsupported compression") {
         // A blob with no recognised data field triggers the else branch
         val emptyBlob = blob {}
