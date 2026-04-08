@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.test.logger)
     alias(libs.plugins.dokka)
     alias(libs.plugins.protobuf)
+    jacoco
     `maven-publish`
 }
 
@@ -94,6 +95,50 @@ tasks {
 
 testlogger {
     setTheme("mocha")
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+    // Exclude generated protobuf code from coverage reporting
+    classDirectories.setFrom(
+        files(classDirectories.files.map { dir ->
+            fileTree(dir) {
+                exclude(
+                    "**/crosby/binary/**",
+                    "**/com/jejking/kosmparser/demo/**"
+                )
+            }
+        })
+    )
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.jacocoTestReport)
+    classDirectories.setFrom(tasks.jacocoTestReport.get().classDirectories)
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                minimum = "0.75".toBigDecimal()
+            }
+            limit {
+                counter = "BRANCH"
+                minimum = "0.65".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.check {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
 fun isNonStable(version: String): Boolean {
