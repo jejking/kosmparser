@@ -40,7 +40,7 @@ The `PbfFlowMapper` provides the same interface for `.osm.pbf` files:
 
 ```kotlin
 import java.nio.Path
-import com.jejking.kosmparser.osm.pbf.toOsmDataFlow
+import com.jejking.kosmparser.osm.pbf.PbfFlowMapper.toOsmDataFlow
 
 Path.of("/tmp/map.osm.pbf").toOsmDataFlow()
 

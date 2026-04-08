@@ -62,6 +62,15 @@ class HeaderBlockDecoderTest : FunSpec({
             block.toOsmMetadata() // should not throw
         }
 
+        test("HasSorting required feature is accepted") {
+            val block = headerBlock {
+                requiredFeatures += "OsmSchema-V0.6"
+                requiredFeatures += "DenseNodes"
+                requiredFeatures += "HasSorting"
+            }
+            block.toOsmMetadata() // should not throw
+        }
+
         test("unknown required feature throws IllegalArgumentException") {
             val block = headerBlock {
                 requiredFeatures += "OsmSchema-V0.6"

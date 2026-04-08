@@ -21,7 +21,13 @@ fun Fileformat.Blob.decompress(): ByteArray = when {
         val inflater = Inflater()
         try {
             inflater.setInput(input)
-            inflater.inflate(output)
+            var offset = 0
+            while (!inflater.finished()) {
+                offset += inflater.inflate(output, offset, output.size - offset)
+            }
+            check(offset == rawSize) {
+                "PBF zlib decompression produced $offset bytes but rawSize is $rawSize"
+            }
         } finally {
             inflater.end()
         }

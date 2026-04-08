@@ -5,8 +5,6 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import kotlin.math.roundToLong
 
-private const val NANODEGREES_TO_DEGREES = 1e-9
-private const val OSM_COORDINATE_PRECISION_SCALE = 1e7
 
 /**
  * Accumulates a delta-encoded list into absolute values.
